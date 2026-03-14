@@ -490,18 +490,155 @@ function renderSectionsTab() {
     container.innerHTML = `<div class="a-empty"><div style="font-size:2rem;margin-bottom:8px">📂</div><p>No sections yet.</p></div>`;
     return;
   }
-  container.innerHTML = Admin.sections.map((s, i) => `
-    <div class="a-section-row" data-id="${s.id}">
-      <div class="a-section-handle">⠿</div>
+  container.innerHTML = Admin.sections.map((s) => `
+    <div class="a-section-row" data-id="${s.id}" draggable="true">
+      <div class="a-section-handle" title="Drag to reorder">⠿</div>
       <div class="a-section-info">
         <div class="a-section-name">${s.name}</div>
-        <div class="a-section-meta">${(s.posts||[]).length} posts</div>
+        <div class="a-section-meta">${(s.posts||[]).length} post${(s.posts||[]).length === 1 ? '' : 's'}</div>
       </div>
       <div class="a-post-actions">
         <button class="btn btn-outline btn-sm" onclick="editSection('${s.id}')">Edit</button>
         <button class="btn btn-danger btn-sm" onclick="deleteSection('${s.id}','${escAttr(s.name)}')">Delete</button>
       </div>
     </div>`).join('');
+
+  initSectionDrag(container);
+}
+
+function initSectionDrag(container) {
+  let dragEl = null;
+  let placeholder = null;
+
+  // Create a placeholder element that shows where the item will drop
+  placeholder = document.createElement('div');
+  placeholder.className = 'a-section-drag-placeholder';
+
+  const rows = () => [...container.querySelectorAll('.a-section-row')];
+
+  container.addEventListener('dragstart', (e) => {
+    dragEl = e.target.closest('.a-section-row');
+    if (!dragEl) return;
+    e.dataTransfer.effectAllowed = 'move';
+    // Small delay so the drag image captures the element before we fade it
+    setTimeout(() => { dragEl.style.opacity = '0.4'; }, 0);
+  });
+
+  container.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    const target = e.target.closest('.a-section-row');
+    if (!target || target === dragEl) return;
+
+    const rect = target.getBoundingClientRect();
+    const midY = rect.top + rect.height / 2;
+    if (e.clientY < midY) {
+      container.insertBefore(placeholder, target);
+    } else {
+      container.insertBefore(placeholder, target.nextSibling);
+    }
+  });
+
+  container.addEventListener('dragleave', (e) => {
+    if (!container.contains(e.relatedTarget)) {
+      placeholder.remove();
+    }
+  });
+
+  container.addEventListener('drop', async (e) => {
+    e.preventDefault();
+    if (!dragEl) return;
+    dragEl.style.opacity = '';
+    if (placeholder.parentNode === container) {
+      container.insertBefore(dragEl, placeholder);
+    }
+    placeholder.remove();
+
+    // Build new order from DOM
+    const newOrder = rows().map(r => r.dataset.id);
+
+    // Optimistically update local state
+    Admin.sections = newOrder.map(id => Admin.sections.find(s => s.id === id)).filter(Boolean);
+
+    try {
+      await API.reorderSections(newOrder);
+      toast('Section order saved ✓', 'success');
+    } catch (e) {
+      toast('Failed to save order', 'error');
+      loadAllData(); // re-sync
+    }
+    dragEl = null;
+  });
+
+  container.addEventListener('dragend', () => {
+    if (dragEl) dragEl.style.opacity = '';
+    placeholder.remove();
+    dragEl = null;
+  });
+
+  // ── Touch drag support for mobile ─────────────────────────────
+  let touchDragEl = null, touchClone = null, touchOffsetY = 0;
+
+  container.addEventListener('touchstart', (e) => {
+    const handle = e.target.closest('.a-section-handle');
+    if (!handle) return;
+    touchDragEl = handle.closest('.a-section-row');
+    if (!touchDragEl) return;
+
+    const rect = touchDragEl.getBoundingClientRect();
+    touchOffsetY = e.touches[0].clientY - rect.top;
+
+    // Create floating clone
+    touchClone = touchDragEl.cloneNode(true);
+    touchClone.style.cssText = `
+      position:fixed; z-index:9999; left:${rect.left}px; top:${rect.top}px;
+      width:${rect.width}px; opacity:0.85; pointer-events:none;
+      box-shadow:0 8px 24px rgba(0,0,0,.2); border-radius:var(--radius);
+      background:var(--surface);
+    `;
+    document.body.appendChild(touchClone);
+    touchDragEl.style.opacity = '0.3';
+    e.preventDefault();
+  }, { passive: false });
+
+  container.addEventListener('touchmove', (e) => {
+    if (!touchClone || !touchDragEl) return;
+    const touch = e.touches[0];
+    touchClone.style.top = (touch.clientY - touchOffsetY) + 'px';
+
+    // Find element underneath
+    touchClone.style.display = 'none';
+    const elBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+    touchClone.style.display = '';
+    const target = elBelow?.closest('.a-section-row');
+    if (target && target !== touchDragEl) {
+      const rect = target.getBoundingClientRect();
+      if (touch.clientY < rect.top + rect.height / 2) {
+        container.insertBefore(placeholder, target);
+      } else {
+        container.insertBefore(placeholder, target.nextSibling);
+      }
+    }
+    e.preventDefault();
+  }, { passive: false });
+
+  container.addEventListener('touchend', async () => {
+    if (!touchDragEl || !touchClone) return;
+    touchClone.remove(); touchClone = null;
+    touchDragEl.style.opacity = '';
+    if (placeholder.parentNode === container) {
+      container.insertBefore(touchDragEl, placeholder);
+    }
+    placeholder.remove();
+
+    const newOrder = rows().map(r => r.dataset.id);
+    Admin.sections = newOrder.map(id => Admin.sections.find(s => s.id === id)).filter(Boolean);
+    try {
+      await API.reorderSections(newOrder);
+      toast('Section order saved ✓', 'success');
+    } catch { toast('Failed to save order', 'error'); loadAllData(); }
+    touchDragEl = null;
+  });
 }
 
 function openNewSection() {

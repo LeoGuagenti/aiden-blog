@@ -45,7 +45,11 @@
 
 /* ── Reset ───────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; }
+html {
+  scroll-behavior: smooth;
+  overflow-x: hidden;
+  max-width: 100%;
+}
 body {
   font-family: var(--font-ui);
   background: var(--bg);
@@ -53,6 +57,8 @@ body {
   line-height: 1.6;
   transition: background var(--transition), color var(--transition);
   min-height: 100vh;
+  overflow-x: hidden;
+  max-width: 100%;
 }
 a { color: var(--accent); text-decoration: none; }
 a:hover { color: var(--accent-dark); }
@@ -559,10 +565,20 @@ input, textarea, select { font-family: var(--font-ui); }
   .hero-title { font-size: 2rem; }
   .feed { padding: 0 16px 60px; }
   .feed-grid { grid-template-columns: 1fr; gap: 20px; }
-  .site-header { padding: 0 16px; }
+  .site-header { padding: 0 12px; gap: 8px; }
+  .site-header-right { gap: 6px; }
+  /* Hide "Request Access" from header on mobile — it lives in the hero gate */
+  #request-btn { display: none !important; }
+  /* Shorten Sign In button on mobile */
+  #login-btn { padding: 7px 12px; font-size: 0.8125rem; }
   .modal { padding: 24px; }
   .form-row { grid-template-columns: 1fr; }
   .section-header { padding: 28px 16px 16px; }
+  /* Prevent any child from blowing out the viewport */
+  .post-page { padding: 24px 16px 60px; }
+  .post-title { font-size: 1.75rem; }
+  .hero-content { padding: 24px 16px; }
+  .water-counter { padding: 8px 12px; font-size: 0.75rem; flex-wrap: wrap; gap: 4px; }
 }
 
 /* ── Quill Editor Overrides ──────────────────────────────────── */

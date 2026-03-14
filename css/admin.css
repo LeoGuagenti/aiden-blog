@@ -96,6 +96,28 @@
 .a-post-meta { color: var(--text-faint); font-size: .8125rem; }
 .a-post-actions { display: flex; gap: 8px; flex-shrink: 0; }
 
+/* ── Section Drag & Drop ──────────────────────────────────────── */
+.a-section-row[draggable="true"] { cursor: default; }
+.a-section-handle {
+  color: var(--text-faint);
+  cursor: grab;
+  font-size: 1.1rem;
+  padding: 0 4px;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+.a-section-handle:active { cursor: grabbing; }
+.a-section-row[draggable="true"]:hover { box-shadow: var(--shadow); }
+.a-section-drag-placeholder {
+  height: 52px;
+  border: 2px dashed var(--accent);
+  border-radius: var(--radius);
+  background: var(--accent-light);
+  margin-bottom: 10px;
+  opacity: 0.6;
+}
+
 /* ── Section Rows ─────────────────────────────────────────────── */
 .a-section-row {
   display: flex; align-items: center; gap: 12px;

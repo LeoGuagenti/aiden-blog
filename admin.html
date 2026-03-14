@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin · Blog</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/admin.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- Quill rich text editor -->
+  <link href="https://cdn.jsdelivr.net/npm/quill@2/dist/quill.snow.css" rel="stylesheet">
+</head>
+<body>
+
+<!-- ── Login Panel ──────────────────────────────────────────── -->
+<div data-panel="login" class="hidden">
+  <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;">
+    <div class="a-auth-card">
+      <div class="a-auth-logo">Admin</div>
+      <h1 class="a-auth-title">Sign In</h1>
+      <p class="a-auth-sub">Access the blog management panel.</p>
+      <div class="form-group">
+        <label class="form-label">Username</label>
+        <input class="form-input" id="admin-username" type="text" placeholder="username" autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input class="form-input" id="admin-password" type="password" placeholder="••••••••" autocomplete="current-password">
+      </div>
+      <div id="login-error" class="form-error hidden"></div>
+      <button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="doAdminLogin()">Sign In</button>
+      <div style="margin-top:20px;text-align:center">
+        <button class="btn btn-ghost btn-sm" onclick="showPanel('setup')">First time? Setup admin account →</button>
+      </div>
+      <div style="margin-top:12px;text-align:center">
+        <a href="/" class="btn btn-ghost btn-sm">← Back to blog</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Setup Panel ───────────────────────────────────────────── -->
+<div data-panel="setup" class="hidden">
+  <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;">
+    <div class="a-auth-card">
+      <div class="a-auth-logo">⚙️</div>
+      <h1 class="a-auth-title">First-Time Setup</h1>
+      <p class="a-auth-sub">Create your admin account. You'll need the setup secret from your wrangler.toml config.</p>
+      <div class="form-group">
+        <label class="form-label">Setup Secret</label>
+        <input class="form-input" id="setup-secret" type="password" placeholder="The SETUP_SECRET you configured">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Username</label>
+        <input class="form-input" id="setup-username" type="text" placeholder="Choose a username">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input class="form-input" id="setup-pw" type="password" placeholder="Min 8 characters">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Confirm Password</label>
+        <input class="form-input" id="setup-pw2" type="password" placeholder="Repeat password">
+      </div>
+      <div id="setup-error" class="form-error hidden"></div>
+      <button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="doSetup()">Create Admin Account</button>
+      <div style="margin-top:16px;text-align:center">
+        <button class="btn btn-ghost btn-sm" onclick="showPanel('login')">← Back to login</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Dashboard Panel ──────────────────────────────────────── -->
+<div data-panel="dashboard" class="hidden">
+  <!-- Admin Header -->
+  <header class="a-header">
+    <div class="a-header-left">
+      <a href="/" class="site-logo" style="font-size:1rem">← Blog</a>
+      <span class="a-header-title">Admin Panel</span>
+    </div>
+    <div class="a-header-right">
+      <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">🌙</button>
+      <button class="btn btn-ghost btn-sm" id="logout-btn">Sign Out</button>
+    </div>
+  </header>
+
+  <!-- Tabs -->
+  <div class="a-tabs">
+    <button class="tab-btn active" data-tab="posts" onclick="switchTab('posts')">Posts</button>
+    <button class="tab-btn" data-tab="sections" onclick="switchTab('sections')">Sections</button>
+    <button class="tab-btn" data-tab="requests" onclick="switchTab('requests')">
+      Requests
+      <span id="requests-badge" class="a-badge hidden"></span>
+    </button>
+    <button class="tab-btn" data-tab="subscribers" onclick="switchTab('subscribers')">Subscribers</button>
+    <button class="tab-btn" data-tab="site" onclick="switchTab('site')">Site Settings</button>
+  </div>
+
+  <!-- ── Posts Tab ──────────────────────────────────────────── -->
+  <div class="tab-pane a-container" data-pane="posts">
+    <div class="a-pane-header">
+      <h2 class="a-pane-title">Posts</h2>
+      <button class="btn btn-primary" onclick="openNewPost()">+ New Post</button>
+    </div>
+    <div id="posts-list">
+      <div class="a-loading">Loading...</div>
+    </div>
+  </div>
+
+  <!-- ── Sections Tab ──────────────────────────────────────────── -->
+  <div class="tab-pane a-container hidden" data-pane="sections">
+    <div class="a-pane-header">
+      <div>
+        <h2 class="a-pane-title">Sections</h2>
+        <p style="color:var(--text-muted);font-size:.875rem;margin-top:4px">Organize posts into named groups. Sections appear in order on the feed.</p>
+      </div>
+      <button class="btn btn-primary" onclick="openNewSection()">+ New Section</button>
+    </div>
+    <div id="sections-list">
+      <div class="a-loading">Loading...</div>
+    </div>
+  </div>
+
+  <!-- ── Requests Tab ────────────────────────────────────────── -->
+  <div class="tab-pane a-container hidden" data-pane="requests">
+    <div class="a-pane-header">
+      <h2 class="a-pane-title">Access Requests</h2>
+      <button class="btn btn-ghost btn-sm" onclick="loadAllData()">↻ Refresh</button>
+    </div>
+    <div id="requests-list">
+      <div class="a-loading">Loading...</div>
+    </div>
+  </div>
+
+  <!-- ── Subscribers Tab ─────────────────────────────────────── -->
+  <div class="tab-pane a-container hidden" data-pane="subscribers">
+    <div class="a-pane-header">
+      <h2 class="a-pane-title">Subscribers</h2>
+      <span style="color:var(--text-muted);font-size:.875rem">People with approved access</span>
+    </div>
+    <div id="subscribers-list">
+      <div class="a-loading">Loading...</div>
+    </div>
+  </div>
+
+  <!-- ── Site Settings Tab ───────────────────────────────────── -->
+  <div class="tab-pane a-container hidden" data-pane="site">
+    <div class="a-pane-header">
+      <h2 class="a-pane-title">Site Settings</h2>
+    </div>
+
+    <div class="a-settings-grid">
+      <!-- Banner Image -->
+      <div class="a-settings-section" style="grid-column:1/-1">
+        <h3 class="a-settings-label">Banner Image</h3>
+        <div class="a-img-upload-zone" onclick="document.getElementById('site-banner-input').click()">
+          <img id="site-banner-preview" class="a-img-preview hidden" alt="Banner preview">
+          <div id="site-banner-placeholder">
+            <div style="font-size:2rem;margin-bottom:8px">🖼️</div>
+            <div>Click to upload banner</div>
+            <div style="font-size:.8125rem;color:var(--text-faint);margin-top:4px">Recommended: 1600×600px</div>
+          </div>
+        </div>
+        <input type="file" id="site-banner-input" accept="image/*" class="hidden">
+        <input type="hidden" id="site-banner-url">
+      </div>
+
+      <!-- Title & Subtitle -->
+      <div class="a-settings-section">
+        <h3 class="a-settings-label">Site Title</h3>
+        <input class="form-input" id="site-title" type="text" placeholder="My Blog">
+      </div>
+      <div class="a-settings-section">
+        <h3 class="a-settings-label">Subtitle / Tagline</h3>
+        <input class="form-input" id="site-subtitle" type="text" placeholder="A private space to share">
+      </div>
+
+      <!-- Description -->
+      <div class="a-settings-section" style="grid-column:1/-1">
+        <h3 class="a-settings-label">About / Description</h3>
+        <textarea class="form-input" id="site-description" rows="3" placeholder="Shown on the front page..." style="resize:vertical"></textarea>
+      </div>
+
+      <!-- Donate -->
+      <div class="a-settings-section">
+        <h3 class="a-settings-label">Venmo Handle</h3>
+        <input class="form-input" id="site-venmo" type="text" placeholder="@yourhandle">
+        <p style="color:var(--text-faint);font-size:.8rem;margin-top:6px">Leave blank to hide the donate button</p>
+      </div>
+      <div class="a-settings-section">
+        <h3 class="a-settings-label">Donate Message</h3>
+        <input class="form-input" id="site-donate-msg" type="text" placeholder="Feed my dog 🐕">
+      </div>
+    </div>
+
+    <div style="margin-top:24px">
+      <button class="btn btn-primary btn-lg" onclick="saveSiteConfig()">Save Settings</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Post Editor Panel ─────────────────────────────────────── -->
+<div data-panel="post-editor" class="hidden">
+  <header class="a-header">
+    <div class="a-header-left">
+      <button class="btn btn-ghost btn-sm" onclick="cancelEditor()">← Cancel</button>
+      <span class="a-header-title" id="editor-heading">New Post</span>
+    </div>
+    <div class="a-header-right">
+      <button class="theme-toggle" id="theme-toggle-2" onclick="toggleTheme()" aria-label="Toggle theme">🌙</button>
+      <button class="btn btn-primary" onclick="savePost()">Publish</button>
+    </div>
+  </header>
+
+  <div class="a-editor-layout">
+    <!-- Main Content -->
+    <div class="a-editor-main">
+      <input class="a-post-title-input" id="post-title-input" type="text" placeholder="Post title...">
+      <div id="editor-container"></div>
+      <div id="post-save-error" class="form-error hidden" style="margin-top:12px"></div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="a-editor-sidebar">
+      <!-- Cover Image -->
+      <div class="a-sidebar-card">
+        <h3 class="a-sidebar-label">Cover Image <span style="color:var(--accent)">*</span></h3>
+        <div class="a-img-upload-zone a-cover-zone" onclick="document.getElementById('cover-file-input').click()">
+          <img id="cover-preview" class="a-img-preview hidden" alt="Cover">
+          <div id="cover-no-img">
+            <div style="font-size:1.5rem;margin-bottom:4px">📷</div>
+            <div style="font-size:.875rem">Click to upload</div>
+            <div style="font-size:.75rem;color:var(--text-faint);margin-top:2px">Required for every post</div>
+          </div>
+        </div>
+        <input type="file" id="cover-file-input" accept="image/*" class="hidden">
+        <input type="hidden" id="cover-img-url">
+      </div>
+
+      <!-- Section -->
+      <div class="a-sidebar-card">
+        <h3 class="a-sidebar-label">Section</h3>
+        <select class="form-select" id="post-section-select">
+          <option value="">— No section —</option>
+        </select>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Section Modal ─────────────────────────────────────────── -->
+<div id="section-modal" class="modal-backdrop hidden">
+  <div class="modal" style="max-width:500px">
+    <button class="modal-close" onclick="document.getElementById('section-modal').classList.add('hidden')">✕</button>
+    <div class="modal-title" id="section-modal-title">New Section</div>
+    <div class="form-group" style="margin-top:20px">
+      <label class="form-label">Section Name</label>
+      <input class="form-input" id="section-name-input" type="text" placeholder="e.g. Travel, Thoughts, Updates">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Description (optional)</label>
+      <input class="form-input" id="section-desc-input" type="text" placeholder="Brief description">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Banner Image (optional)</label>
+      <div class="a-img-upload-zone" style="height:100px" onclick="document.getElementById('section-banner-input').click()">
+        <img id="section-banner-preview" class="a-img-preview hidden" alt="Banner">
+        <div>📷 Click to upload a section banner</div>
+      </div>
+      <input type="file" id="section-banner-input" accept="image/*" class="hidden">
+      <input type="hidden" id="section-banner-url">
+    </div>
+    <div style="display:flex;gap:8px;margin-top:20px">
+      <button class="btn btn-primary" style="flex:1" onclick="saveSectionModal()">Save Section</button>
+      <button class="btn btn-outline" onclick="document.getElementById('section-modal').classList.add('hidden')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Toast Container ───────────────────────────────────────── -->
+<div id="toast-container" class="toast-container"></div>
+
+<!-- Scripts -->
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/quill@2/dist/quill.js"></script>
+<script src="js/admin.js"></script>
+</body>
+</html>

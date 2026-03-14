@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blog</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+</head>
+<body>
+
+<!-- ── Header ──────────────────────────────────────────────── -->
+<header class="site-header">
+  <div class="site-header-left">
+    <a href="/" class="site-logo" id="site-logo"><span>Blog</span></a>
+  </div>
+  <div class="site-header-right">
+    <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">🌙</button>
+    <button class="btn btn-ghost" id="request-btn">Request Access</button>
+    <button class="btn btn-primary" id="login-btn">Sign In</button>
+    <div class="user-menu-wrap hidden" id="user-menu-wrap">
+      <button class="user-avatar" id="user-avatar" aria-label="User menu">?</button>
+      <div class="user-dropdown hidden" id="user-dropdown">
+        <button id="change-pw-btn" onclick="openChangePwModal(false);document.getElementById('user-dropdown').classList.add('hidden')">🔑 Change Password</button>
+        <div class="divider"></div>
+        <a href="admin.html" id="admin-link" class="hidden">⚙️ Admin Panel</a>
+        <div class="divider"></div>
+        <button id="logout-btn">↩️ Sign Out</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ── Water Counter ────────────────────────────────────────── -->
+<div class="water-counter">
+  <span class="drop">💧</span>
+  <span id="water-amount" class="water-amount">...</span>
+  <span>of water consumed running this site</span>
+</div>
+
+<!-- ── Hero ────────────────────────────────────────────────── -->
+<section class="hero" id="hero">
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <div class="hero-eyebrow">Welcome</div>
+    <h1 class="hero-title" id="hero-title">My Blog</h1>
+    <p class="hero-sub" id="hero-sub">A private space to share thoughts, stories, and moments.</p>
+    <div class="hero-actions" id="hero-actions">
+      <button class="btn btn-primary btn-lg" onclick="openRequestModal()" id="hero-request-btn">Request Access</button>
+    </div>
+  </div>
+</section>
+
+<!-- ── Feed ────────────────────────────────────────────────── -->
+<main id="feed-container">
+  <div style="padding:60px 24px;text-align:center;color:var(--text-muted)">Loading...</div>
+</main>
+
+<!-- ── Donate Bar ───────────────────────────────────────────── -->
+<div class="donate-bar hidden" id="donate-bar">
+  <span class="donate-msg">Feed my dog 🐕</span>
+  <a class="donate-btn" href="#" target="_blank" rel="noopener">
+    💸 Send Venmo
+  </a>
+</div>
+
+<!-- ── Site Footer ──────────────────────────────────────────── -->
+<footer class="site-footer">
+  <span>Made with ☕ and love · Running on Cloudflare + GitHub Pages</span>
+</footer>
+
+<!-- ── Post Overlay ─────────────────────────────────────────── -->
+<div id="post-overlay" class="hidden" style="position:fixed;inset:0;z-index:150;overflow-y:auto;background:var(--bg)"></div>
+
+<!-- ── Modal Backdrop ───────────────────────────────────────── -->
+<div id="modal-backdrop" class="modal-backdrop hidden"></div>
+
+<!-- ── Scripts ──────────────────────────────────────────────── -->
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

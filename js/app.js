@@ -324,7 +324,6 @@ function renderPostView(post, comments, container) {
         <div class="post-meta">
           ${section ? `<span class="post-meta-tag">${section.name}</span>` : ''}
           <span>${fmtDateTime(post.createdAt)}</span>
-          ${post.updatedAt !== post.createdAt ? `<span style="color:var(--text-faint)">Edited ${fmtDateTime(post.updatedAt)}</span>` : ''}
           ${post.views ? `<span style="color:var(--text-faint)">${post.views.toLocaleString()} views</span>` : ''}
         </div>
         <h1 class="post-title">${post.title}</h1>
@@ -418,6 +417,7 @@ async function doLogin() {
     closeModal();
     renderHeader();
     if (res.mustChangePw) {
+      App._pendingLoginEmail = email; // store for auto-login after pw set
       openChangePwModal();
     } else {
       loadFeed();
@@ -493,7 +493,7 @@ function openChangePwModal(forced = true) {
 }
 
 async function doChangePw(forced) {
-  const cur = $('#cur-pw')?.value || 'placeholder'; // forced = no current needed
+  const cur = $('#cur-pw')?.value || '';
   const nw = $('#new-pw')?.value;
   const conf = $('#conf-pw')?.value;
   const errEl = $('#cpw-error');
@@ -502,13 +502,28 @@ async function doChangePw(forced) {
   if (nw.length < 6) { showErr(errEl, 'Password must be at least 6 characters'); return; }
   try {
     await API.changePassword(cur, nw);
-    // Update token (re-login)
-    const user = API.getUser();
     closeModal();
-    toast('Password updated! Please sign in again.', 'success');
-    API.clearToken();
-    renderHeader();
-    renderGate();
+    if (forced && App._pendingLoginEmail) {
+      // Auto-login with new password
+      try {
+        const res = await API.viewerLogin(App._pendingLoginEmail, nw);
+        App._pendingLoginEmail = null;
+        renderHeader();
+        loadFeed();
+        toast(`Welcome! Password set. You're in 🎉`, 'success');
+      } catch {
+        // Fallback: prompt them to sign in
+        API.clearToken();
+        renderHeader();
+        renderGate();
+        toast('Password set! Please sign in.', 'success');
+      }
+    } else {
+      API.clearToken();
+      renderHeader();
+      renderGate();
+      toast('Password updated! Please sign in again.', 'success');
+    }
   } catch (e) { showErr(errEl, e.message); }
 }
 

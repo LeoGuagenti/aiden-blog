@@ -288,6 +288,78 @@ function initEditor(content) {
     },
   });
   if (content) Admin.editor.root.innerHTML = content;
+
+  // ── Image resize handler ──────────────────────────────────────
+  initImageResize(Admin.editor);
+}
+
+function initImageResize(quill) {
+  let activeImg = null, handle = null, startX = 0, startW = 0;
+
+  // Create the resize handle element once
+  handle = document.createElement('div');
+  handle.className = 'ql-img-handle';
+  handle.title = 'Drag to resize';
+  document.body.appendChild(handle);
+
+  function positionHandle(img) {
+    const rect = img.getBoundingClientRect();
+    const scrollY = window.scrollY || document.documentElement.scrollTop;
+    handle.style.left = (rect.right - 10) + 'px';
+    handle.style.top  = (rect.bottom - 10 + scrollY) + 'px';
+    handle.style.display = 'block';
+  }
+
+  function deselect() {
+    if (activeImg) activeImg.style.outline = '';
+    activeImg = null;
+    handle.style.display = 'none';
+  }
+
+  // Click on image in editor
+  quill.root.addEventListener('click', (e) => {
+    if (e.target.tagName === 'IMG') {
+      if (activeImg) activeImg.style.outline = '';
+      activeImg = e.target;
+      activeImg.style.outline = '2px solid var(--accent)';
+      positionHandle(activeImg);
+      e.stopPropagation();
+    } else {
+      deselect();
+    }
+  });
+
+  // Drag resize
+  handle.addEventListener('mousedown', (e) => {
+    if (!activeImg) return;
+    startX = e.clientX;
+    startW = activeImg.offsetWidth;
+    e.preventDefault();
+
+    function onMove(e) {
+      const newW = Math.max(60, startW + (e.clientX - startX));
+      activeImg.style.width = newW + 'px';
+      activeImg.style.maxWidth = '100%';
+      positionHandle(activeImg);
+    }
+    function onUp() {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      positionHandle(activeImg);
+    }
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
+
+  // Deselect when clicking outside editor
+  document.addEventListener('click', (e) => {
+    if (!quill.root.contains(e.target) && e.target !== handle) deselect();
+  });
+
+  // Reposition handle on scroll/resize
+  document.querySelector('.a-editor-main')?.addEventListener('scroll', () => {
+    if (activeImg) positionHandle(activeImg);
+  });
 }
 
 // Cover image upload
@@ -320,7 +392,9 @@ document.addEventListener('change', async (e) => {
       const result = await API.uploadImage(file);
       document.getElementById('section-banner-url').value = result.url;
       const preview = document.getElementById('section-banner-preview');
+      const clearBtn = document.getElementById('section-banner-clear-btn');
       if (preview) { preview.src = result.url; preview.classList.remove('hidden'); }
+      if (clearBtn) clearBtn.classList.remove('hidden');
       toast('Banner uploaded ✓', 'success');
     } catch (er) { toast('Upload failed: ' + er.message, 'error'); }
   }
@@ -364,6 +438,17 @@ function clearSiteBanner() {
   if (urlInput) urlInput.value = '';
   if (clearBtn) clearBtn.classList.add('hidden');
   const fileInput = document.getElementById('site-banner-input');
+  if (fileInput) fileInput.value = '';
+}
+
+function clearSectionBanner() {
+  const preview = document.getElementById('section-banner-preview');
+  const urlInput = document.getElementById('section-banner-url');
+  const clearBtn = document.getElementById('section-banner-clear-btn');
+  if (preview) { preview.src = ''; preview.classList.add('hidden'); }
+  if (urlInput) urlInput.value = '';
+  if (clearBtn) clearBtn.classList.add('hidden');
+  const fileInput = document.getElementById('section-banner-input');
   if (fileInput) fileInput.value = '';
 }
 
@@ -436,9 +521,16 @@ function showSectionModal(sec) {
   document.getElementById('section-desc-input').value = sec?.description || '';
   document.getElementById('section-banner-url').value = sec?.banner || '';
   const preview = document.getElementById('section-banner-preview');
+  const clearBtn = document.getElementById('section-banner-clear-btn');
   if (preview) {
-    if (sec?.banner) { preview.src = sec.banner; preview.classList.remove('hidden'); }
-    else preview.classList.add('hidden');
+    if (sec?.banner) {
+      preview.src = sec.banner;
+      preview.classList.remove('hidden');
+      if (clearBtn) clearBtn.classList.remove('hidden');
+    } else {
+      preview.classList.add('hidden');
+      if (clearBtn) clearBtn.classList.add('hidden');
+    }
   }
   modal.dataset.editId = sec?.id || '';
   modal.classList.remove('hidden');

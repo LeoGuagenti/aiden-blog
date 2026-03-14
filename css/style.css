@@ -315,6 +315,18 @@ input, textarea, select { font-family: var(--font-ui); }
   padding: 2px 8px; border-radius: 20px; font-size: 0.75rem; font-weight: 500;
 }
 
+/* ── Post Overlay Bar ─────────────────────────────────────────── */
+.post-overlay-bar {
+  position: sticky; top: 0; z-index: 10;
+  background: var(--bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px; height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+  transition: background var(--transition);
+}
+
 /* ── Post Page ───────────────────────────────────────────────── */
 .post-page { max-width: 720px; margin: 0 auto; padding: 40px 24px 80px; }
 .post-hero-img {

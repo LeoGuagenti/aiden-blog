@@ -34,7 +34,7 @@
         <button class="btn btn-ghost btn-sm" onclick="showPanel('setup')">First time? Setup admin account →</button>
       </div>
       <div style="margin-top:12px;text-align:center">
-        <a href="/" class="btn btn-ghost btn-sm">← Back to blog</a>
+        <a href="./index.html" class="btn btn-ghost btn-sm">← Back to blog</a>
       </div>
     </div>
   </div>
@@ -77,11 +77,11 @@
   <!-- Admin Header -->
   <header class="a-header">
     <div class="a-header-left">
-      <a href="/" class="site-logo" style="font-size:1rem">← Blog</a>
+      <a href="./index.html" class="site-logo" style="font-size:1rem">← Blog</a>
       <span class="a-header-title">Admin Panel</span>
     </div>
     <div class="a-header-right">
-      <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">🌙</button>
+      <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme"></button>
       <button class="btn btn-ghost btn-sm" id="logout-btn">Sign Out</button>
     </div>
   </header>
@@ -165,6 +165,7 @@
         </div>
         <input type="file" id="site-banner-input" accept="image/*" class="hidden">
         <input type="hidden" id="site-banner-url">
+        <button id="site-banner-clear-btn" class="btn btn-ghost btn-sm hidden" style="margin-top:8px;color:var(--text-faint)" onclick="clearSiteBanner()">✕ Remove banner</button>
       </div>
 
       <!-- Title & Subtitle -->
@@ -209,7 +210,7 @@
       <span class="a-header-title" id="editor-heading">New Post</span>
     </div>
     <div class="a-header-right">
-      <button class="theme-toggle" id="theme-toggle-2" onclick="toggleTheme()" aria-label="Toggle theme">🌙</button>
+      <button class="theme-toggle" id="theme-toggle-2" onclick="toggleTheme()" aria-label="Toggle theme"></button>
       <button class="btn btn-primary" onclick="savePost()">Publish</button>
     </div>
   </header>
@@ -237,6 +238,7 @@
         </div>
         <input type="file" id="cover-file-input" accept="image/*" class="hidden">
         <input type="hidden" id="cover-img-url">
+        <button id="cover-clear-btn" class="btn btn-ghost btn-sm hidden" style="width:100%;margin-top:8px;color:var(--text-faint)" onclick="clearCoverImage()">✕ Remove image</button>
       </div>
 
       <!-- Section -->

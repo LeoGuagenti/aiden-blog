@@ -29,6 +29,11 @@ function toast(msg, type = '') {
   setTimeout(() => t.remove(), 3200);
 }
 
+const ICONS = {
+  moon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`,
+  sun:  `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`,
+};
+
 // ── Theme ─────────────────────────────────────────────────────
 function initTheme() {
   const saved = localStorage.getItem('blog_theme') || 'light';
@@ -44,12 +49,15 @@ function toggleTheme() {
 }
 function updateThemeIcon(theme) {
   const btn = $('#theme-toggle');
-  if (btn) btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+  if (btn) btn.innerHTML = theme === 'dark' ? ICONS.sun : ICONS.moon;
 }
 
 // ── Date Formatting ───────────────────────────────────────────
 function fmtDate(ts) {
   return new Date(ts).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+}
+function fmtDateTime(ts) {
+  return new Date(ts).toLocaleString('en-US', { month: 'long', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
 }
 
 // ── Site Config ───────────────────────────────────────────────
@@ -58,7 +66,11 @@ async function loadSiteConfig() {
     App.siteConfig = await API.getSiteConfig();
     renderHero();
     renderDonate();
-    document.title = App.siteConfig.title || 'Blog';
+    const title = App.siteConfig.title || 'Blog';
+    document.title = title;
+    // Footer
+    const footerTitle = $('#footer-title');
+    if (footerTitle) footerTitle.textContent = `© ${new Date().getFullYear()} ${title}`;
     // Update logo
     const logo = $('#site-logo');
     if (logo && App.siteConfig.title) {
@@ -129,6 +141,8 @@ function renderHeader() {
     loginBtn?.classList.add('hidden');
     requestBtn?.classList.add('hidden');
     userMenuWrap?.classList.remove('hidden');
+    // Hide hero CTA buttons — user is already in
+    $('#hero-actions')?.classList.add('hidden');
     const avatar = $('#user-avatar');
     if (avatar && user) {
       avatar.textContent = (user.name || user.username || user.email || '?')[0].toUpperCase();
@@ -141,6 +155,7 @@ function renderHeader() {
     loginBtn?.classList.remove('hidden');
     requestBtn?.classList.remove('hidden');
     userMenuWrap?.classList.add('hidden');
+    $('#hero-actions')?.classList.remove('hidden');
   }
 }
 
@@ -258,7 +273,10 @@ function renderPostCard(post) {
     </div>
     <div class="post-card-footer">
       ${section ? `<span class="post-card-tag">${section.name}</span>` : '<span></span>'}
-      <span>Read →</span>
+      <span style="display:flex;align-items:center;gap:10px">
+        ${post.views ? `<span style="font-size:.75rem;color:var(--text-faint)">${post.views.toLocaleString()} view${post.views === 1 ? '' : 's'}</span>` : ''}
+        <span>Read →</span>
+      </span>
     </div>`;
   return card;
 }
@@ -297,7 +315,7 @@ function renderPostView(post, comments, container) {
 
   container.innerHTML = `
     <div style="background:var(--bg);min-height:100vh">
-      <div style="position:sticky;top:0;z-index:10;background:rgba(250,248,245,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between">
+      <div class="post-overlay-bar">
         <button class="btn btn-ghost" onclick="closePost()">← Back</button>
         ${isAdmin ? `<button class="btn btn-outline btn-sm" onclick="openEditPost('${post.id}')">✏️ Edit</button>` : ''}
       </div>
@@ -305,8 +323,9 @@ function renderPostView(post, comments, container) {
         <img class="post-hero-img" src="${post.coverImage}" alt="${post.title}">
         <div class="post-meta">
           ${section ? `<span class="post-meta-tag">${section.name}</span>` : ''}
-          <span>${fmtDate(post.createdAt)}</span>
-          ${post.updatedAt !== post.createdAt ? `<span style="color:var(--text-faint)">Updated ${fmtDate(post.updatedAt)}</span>` : ''}
+          <span>${fmtDateTime(post.createdAt)}</span>
+          ${post.updatedAt !== post.createdAt ? `<span style="color:var(--text-faint)">Edited ${fmtDateTime(post.updatedAt)}</span>` : ''}
+          ${post.views ? `<span style="color:var(--text-faint)">${post.views.toLocaleString()} views</span>` : ''}
         </div>
         <h1 class="post-title">${post.title}</h1>
         <div class="post-content">${post.content}</div>

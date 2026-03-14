@@ -26,20 +26,23 @@ function fmtDate(ts) {
   return new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
+const ICONS = {
+  moon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`,
+  sun:  `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`,
+};
+
 // ── Theme ─────────────────────────────────────────────────────
 function initTheme() {
   const saved = localStorage.getItem('blog_theme') || 'light';
   document.documentElement.setAttribute('data-theme', saved);
-  const btn = document.getElementById('theme-toggle');
-  if (btn) btn.textContent = saved === 'dark' ? '☀️' : '🌙';
+  $$('.theme-toggle').forEach(btn => { btn.innerHTML = saved === 'dark' ? ICONS.sun : ICONS.moon; });
 }
 function toggleTheme() {
   const current = document.documentElement.getAttribute('data-theme');
   const next = current === 'dark' ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', next);
   localStorage.setItem('blog_theme', next);
-  const btn = document.getElementById('theme-toggle');
-  if (btn) btn.textContent = next === 'dark' ? '☀️' : '🌙';
+  $$('.theme-toggle').forEach(btn => { btn.innerHTML = next === 'dark' ? ICONS.sun : ICONS.moon; });
 }
 
 // ── Auth Check ────────────────────────────────────────────────
@@ -215,12 +218,17 @@ function showPostEditor(post) {
   // Cover image preview
   const preview = $('#cover-preview');
   const noImg = $('#cover-no-img');
+  const clearBtn = $('#cover-clear-btn');
   if (post?.coverImage) {
     if (preview) { preview.src = post.coverImage; preview.classList.remove('hidden'); }
     if (noImg) noImg.classList.add('hidden');
+    if (clearBtn) clearBtn.classList.remove('hidden');
+    document.getElementById('cover-img-url').value = post.coverImage;
   } else {
     if (preview) preview.classList.add('hidden');
     if (noImg) noImg.classList.remove('hidden');
+    if (clearBtn) clearBtn.classList.add('hidden');
+    document.getElementById('cover-img-url').value = '';
   }
   $('#editor-heading').textContent = post ? 'Edit Post' : 'New Post';
 
@@ -231,23 +239,52 @@ function showPostEditor(post) {
 function initEditor(content) {
   const editorEl = document.getElementById('editor-container');
   if (!editorEl) return;
-  // Destroy previous instance
-  if (Admin.editor) {
-    editorEl.innerHTML = '';
-    Admin.editor = null;
+
+  // Quill inserts the toolbar as a SIBLING before the container — must remove it explicitly
+  const parent = editorEl.parentNode;
+  if (parent) {
+    parent.querySelectorAll('.ql-toolbar').forEach(t => t.remove());
   }
+  editorEl.innerHTML = '';
+  editorEl.className = '';
+  Admin.editor = null;
+
   Admin.editor = new Quill('#editor-container', {
     theme: 'snow',
     placeholder: 'Write your post here...',
     modules: {
-      toolbar: [
-        [{ header: [1, 2, 3, false] }],
-        ['bold', 'italic', 'underline', 'strike'],
-        [{ list: 'ordered' }, { list: 'bullet' }],
-        ['blockquote', 'link'],
-        [{ align: [] }],
-        ['clean'],
-      ],
+      toolbar: {
+        container: [
+          [{ header: [1, 2, 3, false] }],
+          ['bold', 'italic', 'underline', 'strike'],
+          [{ list: 'ordered' }, { list: 'bullet' }],
+          ['blockquote', 'link', 'image'],
+          [{ align: [] }],
+          ['clean'],
+        ],
+        handlers: {
+          image: () => {
+            const input = document.createElement('input');
+            input.setAttribute('type', 'file');
+            input.setAttribute('accept', 'image/*');
+            input.click();
+            input.onchange = async () => {
+              const file = input.files[0];
+              if (!file) return;
+              try {
+                toast('Uploading image...', '');
+                const result = await API.uploadImage(file);
+                const range = Admin.editor.getSelection(true);
+                Admin.editor.insertEmbed(range ? range.index : 0, 'image', result.url);
+                if (range) Admin.editor.setSelection(range.index + 1);
+                toast('Image inserted ✓', 'success');
+              } catch (e) {
+                toast('Image upload failed: ' + e.message, 'error');
+              }
+            };
+          }
+        }
+      }
     },
   });
   if (content) Admin.editor.root.innerHTML = content;
@@ -264,8 +301,10 @@ document.addEventListener('change', async (e) => {
       const result = await API.uploadImage(file);
       const preview = $('#cover-preview');
       const noImg = $('#cover-no-img');
+      const clearBtn = $('#cover-clear-btn');
       if (preview) { preview.src = result.url; preview.classList.remove('hidden'); }
       if (noImg) noImg.classList.add('hidden');
+      if (clearBtn) clearBtn.classList.remove('hidden');
       // Store URL for submission
       document.getElementById('cover-img-url').value = result.url;
       toast('Image uploaded ✓', 'success');
@@ -296,10 +335,37 @@ document.addEventListener('change', async (e) => {
       document.getElementById('site-banner-url').value = result.url;
       const preview = document.getElementById('site-banner-preview');
       if (preview) { preview.src = result.url; preview.classList.remove('hidden'); }
+      const clearBtn = document.getElementById('site-banner-clear-btn');
+      if (clearBtn) clearBtn.classList.remove('hidden');
       toast('Banner uploaded ✓', 'success');
     } catch (er) { toast('Upload failed: ' + er.message, 'error'); }
   }
 });
+
+function clearCoverImage() {
+  const preview = $('#cover-preview');
+  const noImg = $('#cover-no-img');
+  const clearBtn = $('#cover-clear-btn');
+  const urlInput = document.getElementById('cover-img-url');
+  if (preview) { preview.src = ''; preview.classList.add('hidden'); }
+  if (noImg) noImg.classList.remove('hidden');
+  if (clearBtn) clearBtn.classList.add('hidden');
+  if (urlInput) urlInput.value = '';
+  // Reset file input so same file can be re-selected
+  const fileInput = document.getElementById('cover-file-input');
+  if (fileInput) fileInput.value = '';
+}
+
+function clearSiteBanner() {
+  const preview = document.getElementById('site-banner-preview');
+  const urlInput = document.getElementById('site-banner-url');
+  const clearBtn = document.getElementById('site-banner-clear-btn');
+  if (preview) { preview.src = ''; preview.classList.add('hidden'); }
+  if (urlInput) urlInput.value = '';
+  if (clearBtn) clearBtn.classList.add('hidden');
+  const fileInput = document.getElementById('site-banner-input');
+  if (fileInput) fileInput.value = '';
+}
 
 async function savePost() {
   const title = $('#post-title-input')?.value.trim();
@@ -492,6 +558,8 @@ async function renderSiteTab() {
       document.getElementById('site-banner-url').value = config.bannerImage;
       const preview = document.getElementById('site-banner-preview');
       if (preview) { preview.src = config.bannerImage; preview.classList.remove('hidden'); }
+      const clearBtn = document.getElementById('site-banner-clear-btn');
+      if (clearBtn) clearBtn.classList.remove('hidden');
     }
   } catch (e) { console.error(e); }
 }

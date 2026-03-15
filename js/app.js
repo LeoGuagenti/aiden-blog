@@ -385,29 +385,30 @@ function escHtml(s) {
 }
 
 // ── Login Modal ───────────────────────────────────────────────
-let _loginMode = 'viewer'; // 'viewer' | 'admin'
+let loginMode = 'viewer'; // 'viewer' | 'admin'
 
-function openLoginModal(mode = 'viewer') {
-  _loginMode = mode;
-  _renderLoginModal();
+function openLoginModal(mode) {
+  loginMode = mode || 'viewer';
+  renderLoginModal();
 }
 
-function _renderLoginModal() {
-  const isAdmin = _loginMode === 'admin';
+function setLoginMode(mode) {
+  loginMode = mode;
+  renderLoginModal();
+}
+
+function renderLoginModal() {
+  const isAdmin = loginMode === 'admin';
   showModal(`
     <div class="modal-title">Sign In</div>
-    <p class="modal-sub">${isAdmin ? 'Admin access only.' : 'Enter your credentials to access the blog.'}</p>
-    <div style="display:flex;gap:6px;margin-bottom:20px;background:var(--surface-2);padding:4px;border-radius:var(--radius-sm)">
-      <button id="tab-viewer" onclick="_setLoginMode('viewer')" style="flex:1;padding:7px;border-radius:4px;border:none;font-size:.8125rem;font-weight:500;cursor:pointer;transition:all .15s;background:${!isAdmin ? 'var(--surface)' : 'transparent'};color:${!isAdmin ? 'var(--text)' : 'var(--text-faint)'};">
-        Member
-      </button>
-      <button id="tab-admin" onclick="_setLoginMode('admin')" style="flex:1;padding:7px;border-radius:4px;border:none;font-size:.8125rem;font-weight:500;cursor:pointer;transition:all .15s;background:${isAdmin ? 'var(--surface)' : 'transparent'};color:${isAdmin ? 'var(--text)' : 'var(--text-faint)'};">
-        Admin
-      </button>
+    <div style="display:flex;gap:4px;margin-bottom:24px;background:var(--surface-2);padding:4px;border-radius:var(--radius-sm)">
+      <button onclick="setLoginMode('viewer')" style="flex:1;padding:8px;border-radius:4px;border:none;font-size:.875rem;font-weight:600;cursor:pointer;transition:all .15s;background:${!isAdmin ? 'var(--surface)' : 'transparent'};color:${!isAdmin ? 'var(--text)' : 'var(--text-faint)'};box-shadow:${!isAdmin ? '0 1px 3px rgba(0,0,0,.08)' : 'none'}">Member</button>
+      <button onclick="setLoginMode('admin')" style="flex:1;padding:8px;border-radius:4px;border:none;font-size:.875rem;font-weight:600;cursor:pointer;transition:all .15s;background:${isAdmin ? 'var(--surface)' : 'transparent'};color:${isAdmin ? 'var(--text)' : 'var(--text-faint)'};box-shadow:${isAdmin ? '0 1px 3px rgba(0,0,0,.08)' : 'none'}">Admin</button>
     </div>
     <div class="form-group">
       <label class="form-label">${isAdmin ? 'Username' : 'Email'}</label>
-      <input class="form-input" id="login-identifier" type="${isAdmin ? 'text' : 'email'}"
+      <input class="form-input" id="login-identifier"
+        type="${isAdmin ? 'text' : 'email'}"
         placeholder="${isAdmin ? 'your username' : 'your@email.com'}"
         autocomplete="${isAdmin ? 'username' : 'email'}">
     </div>
@@ -417,20 +418,15 @@ function _renderLoginModal() {
     </div>
     <div id="login-error" class="form-error hidden"></div>
     <button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="doLogin()">
-      Sign In${isAdmin ? ' as Admin' : ''}
+      ${isAdmin ? 'Sign In as Admin' : 'Sign In'}
     </button>
     ${!isAdmin ? `<p style="text-align:center;margin-top:16px;font-size:.875rem;color:var(--text-muted)">
       Don't have access? <a href="#" onclick="closeModal();openRequestModal()">Request it</a>
     </p>` : ''}
   `);
   setTimeout(() => $('#login-identifier')?.focus(), 50);
-  $('#login-identifier')?.addEventListener('keydown', e => e.key === 'Enter' && $('#login-pw')?.focus());
-  $('#login-pw')?.addEventListener('keydown', e => e.key === 'Enter' && doLogin());
-}
-
-function _setLoginMode(mode) {
-  _loginMode = mode;
-  _renderLoginModal();
+  $('#login-identifier')?.addEventListener('keydown', e => { if (e.key === 'Enter') $('#login-pw')?.focus(); });
+  $('#login-pw')?.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
 }
 
 async function doLogin() {
@@ -440,22 +436,21 @@ async function doLogin() {
   if (!identifier || !pw) { showErr(errEl, 'Please fill in all fields'); return; }
 
   const btn = document.querySelector('#modal-backdrop .btn-primary');
+  const btnLabel = loginMode === 'admin' ? 'Sign In as Admin' : 'Sign In';
   if (btn) { btn.disabled = true; btn.textContent = 'Signing in…'; }
-  const restore = () => { if (btn) { btn.disabled = false; btn.textContent = _loginMode === 'admin' ? 'Sign In as Admin' : 'Sign In'; } };
+  const restore = () => { if (btn) { btn.disabled = false; btn.textContent = btnLabel; } };
 
-  if (_loginMode === 'admin') {
-    // ── Admin login ─────────────────────────────────────────────
+  if (loginMode === 'admin') {
     try {
       await API.adminLogin(identifier, pw);
       restore();
       closeModal();
       window.location.href = './admin.html';
-    } catch {
+    } catch (e) {
       restore();
       showErr(errEl, 'Invalid admin credentials.');
     }
   } else {
-    // ── Viewer login ─────────────────────────────────────────────
     try {
       const res = await API.viewerLogin(identifier, pw);
       restore();

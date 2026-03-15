@@ -578,10 +578,19 @@ export default {
           const { text } = await request.json();
           if (!text?.trim()) return err('Comment cannot be empty');
           const comments = await kvGet(env.BLOG_KV, `comments:${postId}`, []);
+          // For admin: use display name from site config, fallback to username
+          let authorName = auth.name || auth.username || auth.email || 'Anonymous';
+          let isAdminComment = false;
+          if (auth.role === 'admin') {
+            const siteConfig = await kvGet(env.BLOG_KV, 'site:config', {});
+            authorName = siteConfig.adminDisplayName || auth.username || 'Admin';
+            isAdminComment = true;
+          }
           const comment = {
             id: uid(), text: text.trim(),
-            author: auth.name || auth.email,
-            email: auth.email, createdAt: Date.now()
+            author: authorName,
+            isAdmin: isAdminComment,
+            email: auth.email || null, createdAt: Date.now()
           };
           comments.push(comment);
           await kvSet(env.BLOG_KV, `comments:${postId}`, comments);

@@ -176,16 +176,11 @@
       <!-- Banner Image -->
       <div class="a-settings-section" style="grid-column:1/-1">
         <h3 class="a-settings-label">Banner Image</h3>
-        <div class="a-img-upload-zone" onclick="document.getElementById('site-banner-input').click()">
+        <div class="a-img-upload-zone a-banner-zone" onclick="document.getElementById('site-banner-input').click()">
           <img id="site-banner-preview" class="a-img-preview hidden" alt="Banner preview">
           <div class="a-img-upload-hover">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-            Replace
-          </div>
-          <div id="site-banner-placeholder">
-            <div style="font-size:2rem;margin-bottom:8px">🖼️</div>
-            <div>Click to upload banner</div>
-            <div style="font-size:.8125rem;color:var(--text-faint);margin-top:4px">Recommended: 1600×600px</div>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Upload Banner
           </div>
         </div>
         <input type="file" id="site-banner-input" accept="image/*" class="hidden">
@@ -201,6 +196,13 @@
       <div class="a-settings-section">
         <h3 class="a-settings-label">Subtitle / Tagline</h3>
         <input class="form-input" id="site-subtitle" type="text" placeholder="A private space to share">
+      </div>
+
+      <!-- Admin Display Name -->
+      <div class="a-settings-section" style="grid-column:1/-1">
+        <h3 class="a-settings-label">Your Display Name</h3>
+        <input class="form-input" id="site-admin-display-name" type="text" placeholder="e.g. Aiden" style="max-width:280px">
+        <p style="color:var(--text-faint);font-size:.8rem;margin-top:4px">Shown next to 👑 on your comments</p>
       </div>
 
       <!-- Description -->

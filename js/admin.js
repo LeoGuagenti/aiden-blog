@@ -872,6 +872,8 @@ async function renderSiteTab() {
       const el = document.getElementById(f);
       if (el) el.value = config[keys[i]] || '';
     });
+    const dispName = document.getElementById('site-admin-display-name');
+    if (dispName) dispName.value = config.adminDisplayName || '';
     if (config.bannerImage) {
       document.getElementById('site-banner-url').value = config.bannerImage;
       const preview = document.getElementById('site-banner-preview');
@@ -879,7 +881,6 @@ async function renderSiteTab() {
       const clearBtn = document.getElementById('site-banner-clear-btn');
       if (clearBtn) clearBtn.classList.remove('hidden');
     }
-    // Accent color
     const accent = config.accentColor || '#C85A2B';
     const picker = document.getElementById('site-accent-color');
     if (picker) picker.value = accent;
@@ -897,9 +898,10 @@ async function saveSiteConfig() {
   });
   const bannerUrl = document.getElementById('site-banner-url')?.value;
   if (bannerUrl) data.bannerImage = bannerUrl;
-  // Accent color
   const accent = document.getElementById('site-accent-color')?.value;
   if (accent) data.accentColor = accent;
+  const displayName = document.getElementById('site-admin-display-name')?.value.trim();
+  if (displayName !== undefined) data.adminDisplayName = displayName;
   try {
     await API.updateSiteConfig(data);
     toast('Site settings saved ✓', 'success');

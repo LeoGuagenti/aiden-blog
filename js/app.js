@@ -355,6 +355,8 @@ async function openPost(id) {
     const [post, comments] = await Promise.all([API.getPost(id), API.getComments(id)]);
     App.currentPost = post;
     renderPostView(post, comments, overlay);
+    // Init image lightbox after DOM is painted
+    requestAnimationFrame(() => initPostImageLightbox(overlay));
   } catch (e) {
     overlay.innerHTML = `<div style="padding:60px 24px;text-align:center">Error loading post</div>`;
   }
@@ -439,15 +441,46 @@ function processVideoEmbeds(content) {
   );
 }
 
+// ── Post Image Lightbox ───────────────────────────────────────
+function initPostImageLightbox(container) {
+  container.querySelectorAll('.post-content img').forEach(img => {
+    img.style.cursor = 'zoom-in';
+    img.addEventListener('click', () => openLightbox(img.src, img.alt));
+  });
+}
+
+function openLightbox(src, alt) {
+  closeLightbox(); // close any existing
+  const lb = document.createElement('div');
+  lb.id = 'lightbox';
+  lb.innerHTML = `
+    <div style="position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.93);display:flex;align-items:center;justify-content:center;padding:20px;cursor:zoom-out;animation:fadeIn .18s ease">
+      <button style="position:fixed;top:18px;right:22px;background:rgba(255,255,255,.12);border:none;color:white;width:40px;height:40px;border-radius:50%;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center" onclick="closeLightbox()">✕</button>
+      <img src="${src}" alt="${alt || ''}" style="max-width:100%;max-height:90vh;object-fit:contain;border-radius:var(--radius);box-shadow:0 8px 40px rgba(0,0,0,.6);cursor:default;user-select:none;-webkit-user-select:none" onclick="event.stopPropagation()">
+    </div>`;
+  lb.querySelector('div').addEventListener('click', closeLightbox);
+  document.body.appendChild(lb);
+  document.addEventListener('keydown', lbKeyHandler);
+}
+
+function closeLightbox() {
+  const lb = document.getElementById('lightbox');
+  if (lb) lb.remove();
+  document.removeEventListener('keydown', lbKeyHandler);
+}
+
+function lbKeyHandler(e) { if (e.key === 'Escape') closeLightbox(); }
+
 function renderCommentsList(comments) {
   if (!comments.length) return `<p style="color:var(--text-faint);font-size:.875rem;margin-bottom:16px">No comments yet — be the first!</p>`;
   return comments.map(c => {
     const author = c.author || 'Anonymous';
+    const crown = c.isAdmin ? `<span class="comment-crown" title="Author">👑</span>` : '';
     return `
     <div class="comment">
       <div class="comment-avatar">${(author[0] || '?').toUpperCase()}</div>
       <div class="comment-body">
-        <div class="comment-author">${escHtml(author)}</div>
+        <div class="comment-author">${escHtml(author)}${crown}</div>
         <div class="comment-text">${escHtml(c.text)}</div>
         <div class="comment-date">${fmtDate(c.createdAt)}</div>
       </div>
@@ -463,14 +496,16 @@ async function submitComment(postId) {
     input.value = '';
     const list = $('#comments-list');
     if (list) {
-      const existingComments = list.innerHTML.includes('No comments') ? [] : null;
-      if (existingComments !== null) list.innerHTML = '';
+      if (list.innerHTML.includes('No comments')) list.innerHTML = '';
+      const c = res.comment;
+      const author = c?.author || 'Anonymous';
+      const crown = c?.isAdmin ? `<span class="comment-crown" title="Author">👑</span>` : '';
       list.innerHTML += `
         <div class="comment fade-up">
-          <div class="comment-avatar">${res.comment.author[0]?.toUpperCase()}</div>
+          <div class="comment-avatar">${(author[0] || '?').toUpperCase()}</div>
           <div class="comment-body">
-            <div class="comment-author">${res.comment.author}</div>
-            <div class="comment-text">${escHtml(res.comment.text)}</div>
+            <div class="comment-author">${escHtml(author)}${crown}</div>
+            <div class="comment-text">${escHtml(c?.text || '')}</div>
             <div class="comment-date">Just now</div>
           </div>
         </div>`;

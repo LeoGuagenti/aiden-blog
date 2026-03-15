@@ -43,22 +43,21 @@
   --shadow-lg:    0 12px 40px rgba(0,0,0,.5);
 }
 
-/* ── Reset ───────────────────────────────────────────────────── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* ── No Select ───────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box; margin: 0; padding: 0;
+  user-select: none; -webkit-user-select: none;
+}
+/* Allow selecting in inputs, textareas, and comment text */
+input, textarea, [contenteditable],
+.comment-text, .post-content { user-select: text; -webkit-user-select: text; }
 html {
-  scroll-behavior: smooth;
-  overflow-x: hidden;
-  max-width: 100%;
+  scroll-behavior: smooth; overflow-x: hidden; max-width: 100%;
 }
 body {
-  font-family: var(--font-ui);
-  background: var(--bg);
-  color: var(--text);
-  line-height: 1.6;
-  transition: background var(--transition), color var(--transition);
-  min-height: 100vh;
-  overflow-x: hidden;
-  max-width: 100%;
+  font-family: var(--font-ui); background: var(--bg); color: var(--text);
+  line-height: 1.6; transition: background var(--transition), color var(--transition);
+  min-height: 100vh; overflow-x: hidden; max-width: 100%;
 }
 a { color: var(--accent); text-decoration: none; }
 a:hover { color: var(--accent-dark); }
@@ -393,7 +392,7 @@ input, textarea, select { font-family: var(--font-ui); }
 }
 
 /* ── Post Page ───────────────────────────────────────────────── */
-.post-page { max-width: 720px; margin: 0 auto; padding: 40px 24px 80px; }
+.post-page { max-width: 720px; margin: 0 auto; padding: 40px 24px 48px; }
 .post-hero-img {
   width: 100%; aspect-ratio: 16/9; object-fit: cover;
   border-radius: var(--radius-lg); margin-bottom: 36px;
@@ -464,11 +463,12 @@ input, textarea, select { font-family: var(--font-ui); }
 .post-content hr { border: none; border-top: 1px solid var(--border); margin: 2em 0; }
 
 /* ── Comments ────────────────────────────────────────────────── */
-.comments { margin-top: 60px; padding-top: 40px; border-top: 1px solid var(--border); }
+.comments { margin-top: 28px; padding-top: 28px; border-top: 1px solid var(--border); }
 .comments-title {
   font-family: var(--font-display); font-size: 1.5rem; font-weight: 600;
-  margin-bottom: 28px;
+  margin-bottom: 24px;
 }
+.comment-crown { font-size: .75rem; margin-left: 5px; vertical-align: middle; line-height: 1; }
 .comment {
   display: flex; gap: 12px; margin-bottom: 24px;
   animation: fadeUp .3s ease;

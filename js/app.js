@@ -46,6 +46,8 @@ function toggleTheme() {
   document.documentElement.setAttribute('data-theme', next);
   localStorage.setItem('blog_theme', next);
   updateThemeIcon(next);
+  // Re-apply accent so dark/light variants recalculate
+  if (App.siteConfig?.accentColor) applyAccent(App.siteConfig.accentColor);
 }
 function updateThemeIcon(theme) {
   const btn = $('#theme-toggle');
@@ -71,8 +73,12 @@ function rgbToHex(r, g, b) {
 function applyAccent(hex) {
   if (!hex || !/^#[0-9a-fA-F]{6}$/.test(hex)) return;
   const { r, g, b } = hexToRgb(hex);
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
   const dark  = rgbToHex(r * 0.8, g * 0.8, b * 0.8);
-  const light = rgbToHex(r * 0.15 + 255 * 0.85, g * 0.15 + 255 * 0.85, b * 0.15 + 255 * 0.85);
+  // In dark mode, accent-light should be a dark tinted surface, not a bright wash
+  const light = isDark
+    ? rgbToHex(r * 0.18 + 20, g * 0.18 + 20, b * 0.18 + 20)
+    : rgbToHex(r * 0.15 + 255 * 0.85, g * 0.15 + 255 * 0.85, b * 0.15 + 255 * 0.85);
   const root  = document.documentElement;
   root.style.setProperty('--accent',       hex);
   root.style.setProperty('--accent-dark',  dark);
@@ -396,16 +402,18 @@ function renderPostView(post, comments, container) {
           </div>` : ''}
         </div>
         <div class="post-meta">
-          ${section ? `<span class="post-meta-tag">${section.name}</span>` : ''}
-          <span>${fmtDateTime(post.createdAt)}</span>
-          ${post.views ? `<span style="color:var(--text-faint)">${post.views.toLocaleString()} views</span>` : ''}
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;flex:1">
+            ${section ? `<span class="post-meta-tag">${section.name}</span>` : ''}
+            <span>${fmtDateTime(post.createdAt)}</span>
+            ${post.views ? `<span style="color:var(--text-faint)">${post.views.toLocaleString()} views</span>` : ''}
+          </div>
+          ${post.location ? `
+          <div class="post-location">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            <span>${escHtml(post.location)}</span>
+          </div>` : ''}
         </div>
         <h1 class="post-title">${post.title}</h1>
-        ${post.location ? `
-        <div class="post-location">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-          <span>${escHtml(post.location)}</span>
-        </div>` : ''}
         <div class="post-content">${processedContent}</div>
 
         <div class="comments">
@@ -433,15 +441,18 @@ function processVideoEmbeds(content) {
 
 function renderCommentsList(comments) {
   if (!comments.length) return `<p style="color:var(--text-faint);font-size:.875rem;margin-bottom:16px">No comments yet — be the first!</p>`;
-  return comments.map(c => `
+  return comments.map(c => {
+    const author = c.author || 'Anonymous';
+    return `
     <div class="comment">
-      <div class="comment-avatar">${c.author[0]?.toUpperCase() || '?'}</div>
+      <div class="comment-avatar">${(author[0] || '?').toUpperCase()}</div>
       <div class="comment-body">
-        <div class="comment-author">${c.author}</div>
+        <div class="comment-author">${escHtml(author)}</div>
         <div class="comment-text">${escHtml(c.text)}</div>
         <div class="comment-date">${fmtDate(c.createdAt)}</div>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 async function submitComment(postId) {

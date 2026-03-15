@@ -342,13 +342,6 @@ input, textarea, select { font-family: var(--font-ui); }
 }
 .pw-eye:hover { color: var(--text-muted); }
 
-/* ── Post Location ───────────────────────────────────────────── */
-.post-location {
-  display: flex; align-items: center; gap: 6px;
-  color: var(--text-muted); font-size: .9rem;
-  margin-bottom: 28px; margin-top: -8px;
-}
-
 /* ── Post Hero Wrap (image + corner map) ─────────────────────── */
 .post-hero-wrap {
   position: relative;
@@ -407,13 +400,18 @@ input, textarea, select { font-family: var(--font-ui); }
   box-shadow: var(--shadow);
 }
 .post-meta {
-  display: flex; align-items: center; gap: 16px;
-  font-size: 0.8125rem; color: var(--text-muted); margin-bottom: 20px;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; font-size: 0.8125rem; color: var(--text-muted); margin-bottom: 20px;
   flex-wrap: wrap;
 }
 .post-meta-tag {
   background: var(--accent-light); color: var(--accent);
   padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;
+}
+.post-location {
+  display: flex; align-items: center; gap: 5px;
+  color: var(--text-faint); font-size: .8rem;
+  white-space: nowrap; flex-shrink: 0;
 }
 .post-title {
   font-family: var(--font-display);

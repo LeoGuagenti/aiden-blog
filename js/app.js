@@ -385,45 +385,94 @@ function escHtml(s) {
 }
 
 // ── Login Modal ───────────────────────────────────────────────
-function openLoginModal() {
+let _loginMode = 'viewer'; // 'viewer' | 'admin'
+
+function openLoginModal(mode = 'viewer') {
+  _loginMode = mode;
+  _renderLoginModal();
+}
+
+function _renderLoginModal() {
+  const isAdmin = _loginMode === 'admin';
   showModal(`
     <div class="modal-title">Sign In</div>
-    <p class="modal-sub">Enter your credentials to access the blog.</p>
+    <p class="modal-sub">${isAdmin ? 'Admin access only.' : 'Enter your credentials to access the blog.'}</p>
+    <div style="display:flex;gap:6px;margin-bottom:20px;background:var(--surface-2);padding:4px;border-radius:var(--radius-sm)">
+      <button id="tab-viewer" onclick="_setLoginMode('viewer')" style="flex:1;padding:7px;border-radius:4px;border:none;font-size:.8125rem;font-weight:500;cursor:pointer;transition:all .15s;background:${!isAdmin ? 'var(--surface)' : 'transparent'};color:${!isAdmin ? 'var(--text)' : 'var(--text-faint)'};">
+        Member
+      </button>
+      <button id="tab-admin" onclick="_setLoginMode('admin')" style="flex:1;padding:7px;border-radius:4px;border:none;font-size:.8125rem;font-weight:500;cursor:pointer;transition:all .15s;background:${isAdmin ? 'var(--surface)' : 'transparent'};color:${isAdmin ? 'var(--text)' : 'var(--text-faint)'};">
+        Admin
+      </button>
+    </div>
     <div class="form-group">
-      <label class="form-label">Email</label>
-      <input class="form-input" id="login-email" type="email" placeholder="your@email.com" autocomplete="email">
+      <label class="form-label">${isAdmin ? 'Username' : 'Email'}</label>
+      <input class="form-input" id="login-identifier" type="${isAdmin ? 'text' : 'email'}"
+        placeholder="${isAdmin ? 'your username' : 'your@email.com'}"
+        autocomplete="${isAdmin ? 'username' : 'email'}">
     </div>
     <div class="form-group">
       <label class="form-label">Password</label>
       <input class="form-input" id="login-pw" type="password" placeholder="••••••••" autocomplete="current-password">
     </div>
     <div id="login-error" class="form-error hidden"></div>
-    <button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="doLogin()">Sign In</button>
-    <p style="text-align:center;margin-top:16px;font-size:.875rem;color:var(--text-muted)">
+    <button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="doLogin()">
+      Sign In${isAdmin ? ' as Admin' : ''}
+    </button>
+    ${!isAdmin ? `<p style="text-align:center;margin-top:16px;font-size:.875rem;color:var(--text-muted)">
       Don't have access? <a href="#" onclick="closeModal();openRequestModal()">Request it</a>
-    </p>`);
-  setTimeout(() => $('#login-email')?.focus(), 50);
-  document.getElementById('login-email').addEventListener('keydown', e => e.key === 'Enter' && doLogin());
-  document.getElementById('login-pw').addEventListener('keydown', e => e.key === 'Enter' && doLogin());
+    </p>` : ''}
+  `);
+  setTimeout(() => $('#login-identifier')?.focus(), 50);
+  $('#login-identifier')?.addEventListener('keydown', e => e.key === 'Enter' && $('#login-pw')?.focus());
+  $('#login-pw')?.addEventListener('keydown', e => e.key === 'Enter' && doLogin());
+}
+
+function _setLoginMode(mode) {
+  _loginMode = mode;
+  _renderLoginModal();
 }
 
 async function doLogin() {
-  const email = $('#login-email')?.value.trim();
+  const identifier = $('#login-identifier')?.value.trim();
   const pw = $('#login-pw')?.value;
   const errEl = $('#login-error');
-  if (!email || !pw) { showErr(errEl, 'Please fill in all fields'); return; }
-  try {
-    const res = await API.viewerLogin(email, pw);
-    closeModal();
-    renderHeader();
-    if (res.mustChangePw) {
-      App._pendingLoginEmail = email; // store for auto-login after pw set
-      openChangePwModal();
-    } else {
-      loadFeed();
-      toast(`Welcome back, ${res.name || 'friend'}! 👋`, 'success');
+  if (!identifier || !pw) { showErr(errEl, 'Please fill in all fields'); return; }
+
+  const btn = document.querySelector('#modal-backdrop .btn-primary');
+  if (btn) { btn.disabled = true; btn.textContent = 'Signing in…'; }
+  const restore = () => { if (btn) { btn.disabled = false; btn.textContent = _loginMode === 'admin' ? 'Sign In as Admin' : 'Sign In'; } };
+
+  if (_loginMode === 'admin') {
+    // ── Admin login ─────────────────────────────────────────────
+    try {
+      await API.adminLogin(identifier, pw);
+      restore();
+      closeModal();
+      window.location.href = './admin.html';
+    } catch {
+      restore();
+      showErr(errEl, 'Invalid admin credentials.');
     }
-  } catch (e) { showErr(errEl, e.message); }
+  } else {
+    // ── Viewer login ─────────────────────────────────────────────
+    try {
+      const res = await API.viewerLogin(identifier, pw);
+      restore();
+      closeModal();
+      renderHeader();
+      if (res.mustChangePw) {
+        App._pendingLoginEmail = identifier;
+        openChangePwModal();
+      } else {
+        loadFeed();
+        toast(`Welcome back, ${res.name || 'friend'}! 👋`, 'success');
+      }
+    } catch (e) {
+      restore();
+      showErr(errEl, e.message);
+    }
+  }
 }
 
 // ── Request Access Modal ──────────────────────────────────────

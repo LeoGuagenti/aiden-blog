@@ -191,7 +191,10 @@ function renderHeader() {
 
     // Update avatar button
     const avatar = $('#user-avatar');
-    if (avatar) avatar.textContent = initial;
+    if (avatar) {
+      avatar.textContent = initial;
+      avatar.classList.add('user-avatar--active');
+    }
 
     // Update dropdown header
     const ddAvatar = $('#dropdown-avatar');
@@ -316,18 +319,23 @@ function renderFeed(container) {
       sectionWrap.appendChild(img);
     }
 
-    const LIMIT = 6;
+    const MOBILE_LIMIT = 3;
+    const DESKTOP_LIMIT = 6;
     const grid = el('div', 'feed-grid');
     secPosts.forEach((p, i) => {
       const card = renderPostCard(p);
-      card.style.animationDelay = `${Math.min(i, LIMIT - 1) * 0.05}s`;
-      if (i >= LIMIT) card.classList.add('sec-hidden-post');
+      card.style.animationDelay = `${Math.min(i, DESKTOP_LIMIT - 1) * 0.05}s`;
+      // Hide posts beyond desktop limit unconditionally
+      if (i >= DESKTOP_LIMIT) card.classList.add('sec-hidden-post');
       grid.appendChild(card);
     });
     sectionWrap.appendChild(grid);
 
-    if (secPosts.length > LIMIT) {
+    // Show button if section has more than the MOBILE limit (covers both breakpoints)
+    if (secPosts.length > MOBILE_LIMIT) {
       const moreWrap = el('div', 'section-see-more');
+      // If all posts fit on desktop (≤ desktop limit), hide button on desktop only
+      if (secPosts.length <= DESKTOP_LIMIT) moreWrap.classList.add('desktop-hidden');
       const secId = sec.id;
       const secName = escHtml(sec.name);
       const count = secPosts.length;
@@ -345,8 +353,9 @@ function renderFeed(container) {
 function expandSection(btn, sectionId) {
   const wrap = document.querySelector(`.section-wrap[data-section-id="${sectionId}"]`);
   if (!wrap) return;
+  // Remove JS-hidden posts (> desktop limit)
   wrap.querySelectorAll('.sec-hidden-post').forEach(c => c.classList.remove('sec-hidden-post'));
-  // Add class so mobile CSS nth-child rule stops hiding
+  // Let CSS mobile rule know this section is fully expanded
   wrap.querySelectorAll('.feed-grid').forEach(g => g.classList.add('sec-expanded'));
   btn.closest('.section-see-more')?.remove();
 }

@@ -158,7 +158,13 @@ input, textarea, select { font-family: var(--font-ui); }
   display: flex; align-items: center; justify-content: center;
   transition: all var(--transition);
 }
-.user-avatar:hover {
+.user-avatar--active {
+  background: var(--accent-light);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.user-avatar:hover,
+.user-avatar--active:hover {
   background: var(--accent); color: white; border-color: var(--accent);
 }
 .user-dropdown {
@@ -291,16 +297,24 @@ input, textarea, select { font-family: var(--font-ui); }
 
 /* ── Section Truncation ──────────────────────────────────────── */
 .section-wrap { margin-bottom: 8px; }
+/* Posts hidden by JS (beyond desktop limit of 6) */
 .sec-hidden-post { display: none !important; }
+
+/* On mobile, also hide posts 4–6 (only CSS hides these; JS hides 7+) */
+@media (max-width: 640px) {
+  .feed-grid:not(.sec-expanded) .post-card:nth-child(n+4) { display: none; }
+}
+
 .section-see-more {
   text-align: center;
-  padding: 8px 24px 32px;
+  padding: 4px 24px 28px;
   max-width: 1100px; margin: 0 auto;
 }
-/* On mobile hide cards beyond index 3 (nth-child counts from 1) */
-@media (max-width: 640px) {
-  .feed-grid .post-card:nth-child(n+4) { display: none; }
-  .feed-grid.sec-expanded .post-card:nth-child(n+4) { display: flex; }
+/* On desktop, hide the "see more" button if all posts fit (≤ 6) —
+   the button is only in the DOM when count > 3, so on desktop 4-6 post
+   sections show all cards but still have a button. Hide it on desktop only. */
+@media (min-width: 641px) {
+  .section-see-more.desktop-hidden { display: none; }
 }
 
 /* ── Feed Grid ───────────────────────────────────────────────── */

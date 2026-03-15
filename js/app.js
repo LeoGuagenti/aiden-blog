@@ -150,7 +150,18 @@ async function loadStats() {
   try {
     const stats = await API.getStats();
     const el = $('#water-amount');
-    if (el) el.textContent = `${parseFloat(stats.waterMl).toFixed(4)} mL`;
+    if (!el) return;
+    const ml = parseFloat(stats.waterMl);
+    // Show in µL if under 1mL, mL if under 1000mL, L otherwise
+    let display;
+    if (ml < 0.001) {
+      display = `${(ml * 1000).toFixed(2)} µL`;
+    } else if (ml < 1000) {
+      display = `${ml.toFixed(3)} mL`;
+    } else {
+      display = `${(ml / 1000).toFixed(3)} L`;
+    }
+    el.textContent = display;
   } catch {}
 }
 
@@ -434,10 +445,15 @@ function renderPostView(post, comments, container) {
 
 // ── Video Embed Processing ─────────────────────────────────────
 function processVideoEmbeds(content) {
-  // Wrap any bare iframes (YouTube/Vimeo embeds) in responsive container
+  // Skip iframes already inside a video-embed-wrap to prevent double-wrapping on re-render
   return content.replace(
     /(<iframe[^>]*(?:youtube|youtu\.be|vimeo|loom)[^>]*>[\s\S]*?<\/iframe>)/gi,
-    '<div class="video-embed-wrap">$1</div>'
+    (match, iframe, offset) => {
+      // Check if already wrapped (look back 80 chars for the wrapper div)
+      const before = content.slice(Math.max(0, offset - 80), offset);
+      if (before.includes('video-embed-wrap')) return match;
+      return `<div class="video-embed-wrap">${iframe}</div>`;
+    }
   );
 }
 

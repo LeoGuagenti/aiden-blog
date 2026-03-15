@@ -55,6 +55,9 @@ function toggleTheme() {
   document.documentElement.setAttribute('data-theme', next);
   localStorage.setItem('blog_theme', next);
   $$('.theme-toggle').forEach(btn => { btn.innerHTML = next === 'dark' ? ICONS.sun : ICONS.moon; });
+  // Re-apply accent so dark/light accent-light variant recalculates
+  const accent = document.getElementById('site-accent-color')?.value;
+  if (accent) applyAccentAdmin(accent);
 }
 
 // ── Auth Check ────────────────────────────────────────────────
@@ -62,7 +65,6 @@ function checkAuth() {
   if (API.isAdmin()) {
     showPanel('dashboard');
   } else {
-    const creds = localStorage.getItem('admin:setup_checked');
     showPanel('login');
   }
 }
@@ -346,13 +348,18 @@ function toEmbedUrl(url) {
 }
 
 function initImageResize(quill) {
-  let activeImg = null, handle = null, startX = 0, startW = 0;
+  let activeImg = null, startX = 0, startW = 0;
 
-  // Create the resize handle element once
-  handle = document.createElement('div');
-  handle.className = 'ql-img-handle';
-  handle.title = 'Drag to resize';
-  document.body.appendChild(handle);
+  // Reuse a single handle element — don't create a new one every initEditor call
+  let handle = document.getElementById('ql-img-handle-singleton');
+  if (!handle) {
+    handle = document.createElement('div');
+    handle.id = 'ql-img-handle-singleton';
+    handle.className = 'ql-img-handle';
+    handle.title = 'Drag to resize';
+    document.body.appendChild(handle);
+  }
+  handle.style.display = 'none';
 
   function positionHandle(img) {
     const rect = img.getBoundingClientRect();
@@ -511,9 +518,10 @@ async function savePost() {
   const content = Admin.editor?.root.innerHTML || '';
   const errEl = $('#post-save-error');
 
+  const rawText = content.replace(/<[^>]*>/g, '').trim();
   if (!title) { showErr(errEl, 'Post title is required'); return; }
   if (!coverImg) { showErr(errEl, 'A cover image is required'); return; }
-  if (!content || content === '<p><br></p>') { showErr(errEl, 'Post content cannot be empty'); return; }
+  if (!rawText) { showErr(errEl, 'Post content cannot be empty'); return; }
 
   const data = {
     title, content, coverImage: coverImg, sectionId,
@@ -546,7 +554,11 @@ function renderSectionsTab() {
     container.innerHTML = `<div class="a-empty"><div style="font-size:2rem;margin-bottom:8px">📂</div><p>No sections yet.</p></div>`;
     return;
   }
-  container.innerHTML = Admin.sections.map((s) => `
+  // Replace with a fresh element to clear any previously attached drag listeners
+  const fresh = container.cloneNode(false);
+  container.parentNode.replaceChild(fresh, container);
+
+  fresh.innerHTML = Admin.sections.map((s) => `
     <div class="a-section-row" data-id="${s.id}" draggable="true">
       <div class="a-section-handle" title="Drag to reorder">⠿</div>
       <div class="a-section-info">
@@ -559,7 +571,7 @@ function renderSectionsTab() {
       </div>
     </div>`).join('');
 
-  initSectionDrag(container);
+  initSectionDrag(fresh);
 }
 
 function initSectionDrag(container) {
@@ -840,8 +852,11 @@ function rgbToHex(r, g, b) {
 function applyAccentAdmin(hex) {
   if (!hex || !/^#[0-9a-fA-F]{6}$/.test(hex)) return;
   const { r, g, b } = hexToRgb(hex);
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
   const dark  = rgbToHex(r * 0.8, g * 0.8, b * 0.8);
-  const light = rgbToHex(r * 0.15 + 255 * 0.85, g * 0.15 + 255 * 0.85, b * 0.15 + 255 * 0.85);
+  const light = isDark
+    ? rgbToHex(r * 0.18 + 20, g * 0.18 + 20, b * 0.18 + 20)
+    : rgbToHex(r * 0.15 + 255 * 0.85, g * 0.15 + 255 * 0.85, b * 0.15 + 255 * 0.85);
   const root = document.documentElement;
   root.style.setProperty('--accent', hex);
   root.style.setProperty('--accent-dark', dark);
@@ -896,8 +911,8 @@ async function saveSiteConfig() {
     const el = document.getElementById(id);
     if (el) data[key] = el.value.trim();
   });
-  const bannerUrl = document.getElementById('site-banner-url')?.value;
-  if (bannerUrl) data.bannerImage = bannerUrl;
+  const bannerUrl = document.getElementById('site-banner-url')?.value || '';
+  data.bannerImage = bannerUrl; // always write — empty string clears the banner
   const accent = document.getElementById('site-accent-color')?.value;
   if (accent) data.accentColor = accent;
   const displayName = document.getElementById('site-admin-display-name')?.value.trim();

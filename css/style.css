@@ -306,7 +306,7 @@ input, textarea, select { font-family: var(--font-ui); }
 
 .section-see-more {
   text-align: center;
-  padding: 0 24px 32px;
+  padding: 0 24px 16px;
   max-width: 1100px; margin: 0 auto;
 }
 .section-see-more .btn {
@@ -618,34 +618,33 @@ input, textarea, select { font-family: var(--font-ui); }
 
 /* ── Donate Bar ───────────────────────────────────────────── */
 .donate-bar {
-  background: var(--bg-alt);
+  background: var(--surface);
   border-top: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
-  padding: 18px 32px;
-  display: flex; align-items: center; justify-content: center; gap: 20px;
+  padding: 14px 32px;
+  display: flex; align-items: center; justify-content: center; gap: 16px;
   flex-wrap: wrap;
 }
 .donate-msg {
-  font-family: var(--font-display);
-  font-size: 1rem; font-style: italic;
-  color: var(--text-muted); letter-spacing: 0.01em;
+  font-size: .9rem;
+  color: var(--text-muted);
 }
 .donate-btn {
-  display: inline-flex; align-items: center; gap: 8px;
-  background: transparent;
-  color: var(--accent);
-  border: 1.5px solid var(--accent);
-  padding: 8px 20px; border-radius: 99px;
-  font-weight: 600; font-size: 0.875rem;
-  letter-spacing: 0.03em; text-transform: uppercase;
-  transition: all var(--transition);
-  text-decoration: none;
-}
-.donate-btn:hover {
+  display: inline-flex; align-items: center; gap: 7px;
   background: var(--accent);
   color: white;
+  border: none;
+  padding: 9px 20px; border-radius: var(--radius-sm);
+  font-weight: 600; font-size: 0.875rem;
+  transition: all var(--transition);
+  text-decoration: none;
+  box-shadow: 0 1px 3px rgba(0,0,0,.12);
+}
+.donate-btn:hover {
+  background: var(--accent-dark);
+  color: white;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(200,90,43,.3);
+  box-shadow: 0 4px 12px rgba(0,0,0,.15);
 }
 
 /* ── Empty / Loading States ──────────────────────────────────── */

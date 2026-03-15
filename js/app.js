@@ -827,6 +827,7 @@ async function doResetPassword(token) {
   }
 }
 function openChangePwModal(forced = true) {
+  const user = API.getUser();
   showModal(`
     <div class="modal-title">${forced ? 'Set Your Password' : 'Change Password'}</div>
     <p class="modal-sub">${forced ? 'Please set a personal password to continue.' : 'Update your account password.'}</p>
@@ -844,7 +845,10 @@ function openChangePwModal(forced = true) {
       ${pwField('conf-pw', 'Repeat password', 'new-password')}
     </div>
     <div id="cpw-error" class="form-error hidden"></div>
-    <button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="doChangePw(${forced})">Update Password</button>`, forced);
+    <button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="doChangePw(${forced})">Update Password</button>
+    ${!forced ? `<p style="text-align:center;margin-top:14px;font-size:.875rem;color:var(--text-muted)">
+      Forgot your current password? <a href="#" onclick="closeModal();openForgotPasswordModal()">Reset it</a>
+    </p>` : ''}`, forced);
 }
 
 async function doChangePw(forced) {

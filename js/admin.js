@@ -121,14 +121,25 @@ function clearErr(el) { if (el) el.classList.add('hidden'); }
 // ── Data Loading ──────────────────────────────────────────────
 async function loadAllData() {
   try {
-    const [posts, sections, requests, subscribers] = await Promise.all([
+    const [posts, sections, requests, subscribers, config] = await Promise.all([
       API.getPosts(), API.getSections(),
-      API.getAccessRequests(), API.getSubscribers().catch(() => [])
+      API.getAccessRequests(), API.getSubscribers().catch(() => []),
+      API.getSiteConfig().catch(() => ({}))
     ]);
     Admin.posts = posts;
     Admin.sections = sections;
     Admin.requests = requests;
     Admin.subscribers = subscribers;
+
+    // Apply accent color immediately so buttons are themed on every page load
+    if (config.accentColor) applyAccentAdmin(config.accentColor);
+
+    // Update avatar initial using display name
+    const displayName = config.adminDisplayName;
+    const username = API.getUser()?.username || '';
+    const initial = (displayName || username || 'A')[0].toUpperCase();
+    const avatarEl = document.getElementById('admin-avatar-initial');
+    if (avatarEl) avatarEl.textContent = initial;
 
     // Update badge
     const badge = $('#requests-badge');

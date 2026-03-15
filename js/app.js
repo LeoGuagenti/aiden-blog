@@ -358,7 +358,10 @@ async function openPost(id) {
   const overlay = $('#post-overlay');
   if (!overlay) return;
   overlay.classList.remove('hidden');
-  document.body.style.overflow = 'hidden';
+  // Lock scroll — position:fixed is required for iOS Safari
+  const scrollY = window.scrollY;
+  document.body.style.cssText = `overflow:hidden;position:fixed;width:100%;top:-${scrollY}px`;
+  document.body.dataset.scrollY = scrollY;
   window.history.pushState({}, '', `?post=${id}`);
   renderPostSkeleton(overlay);
 
@@ -378,7 +381,10 @@ function closePost() {
   if (!overlay) return;
   overlay.classList.add('hidden');
   overlay.innerHTML = '';
-  document.body.style.overflow = '';
+  // Restore scroll — undo the position:fixed lock
+  const scrollY = parseInt(document.body.dataset.scrollY || '0');
+  document.body.style.cssText = '';
+  window.scrollTo(0, scrollY);
   window.history.pushState({}, '', window.location.pathname);
   App.currentPost = null;
 }

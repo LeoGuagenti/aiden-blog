@@ -632,11 +632,22 @@ input, textarea, select { font-family: var(--font-ui); }
 }
 @media (max-width: 640px) {
   .map-skeleton-wrap {
-    position: static;
+    position: relative; /* keep inner .post-map-embed positioned relative to this, not hero-wrap */
     width: 100%; height: 200px;
     border-radius: 0 0 var(--radius-lg) var(--radius-lg);
     border: none; border-top: 1px solid var(--border);
     box-shadow: none;
+    /* pull out of absolute flow so it appears below the image */
+    top: auto; right: auto; bottom: auto; left: auto;
+    display: block;
+  }
+  /* Make hero wrap stack image then map vertically */
+  .post-hero-wrap {
+    display: flex;
+    flex-direction: column;
+  }
+  .post-hero-wrap .post-hero-img {
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   }
 }
 
@@ -678,9 +689,12 @@ input, textarea, select { font-family: var(--font-ui); }
 }
 @media (max-width: 640px) {
   .map-skeleton-wrap {
-    position: static;
+    position: relative;
     width: 100%; height: 200px;
     border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+    border: none;
+    box-shadow: none;
+    top: auto; right: auto;
   }
 }
 

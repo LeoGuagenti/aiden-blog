@@ -94,8 +94,8 @@ const API = {
   },
 
   async getAccessRequests() { return this.get('/api/access/requests'); },
-  async approveRequest(id) { return this.post(`/api/access/approve/${id}`, {}); },
-  async denyRequest(id) { return this.del(`/api/access/deny/${id}`); },
+  async approveRequest(id) { return this.post(`/api/access/approve/${encodeURIComponent(id)}`, {}); },
+  async denyRequest(id) { return this.del(`/api/access/deny/${encodeURIComponent(id)}`); },
 
   async getPosts(sectionId) {
     const q = sectionId ? `?section=${sectionId}` : '';

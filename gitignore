@@ -1,0 +1,15 @@
+# Cloudflare Worker — deploy via wrangler, never push to GitHub
+worker/
+wrangler.toml
+
+# Wrangler local dev files
+.wrangler/
+.dev.vars
+
+# Node
+node_modules/
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,3 +1,21 @@
+/* ── Accent Color Swatches ────────────────────────────────────── */
+.a-color-swatches {
+  display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+}
+.a-swatch {
+  width: 30px; height: 30px; border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer; transition: transform .15s, border-color .15s;
+  outline: none;
+  box-shadow: 0 1px 3px rgba(0,0,0,.2);
+}
+.a-swatch:hover { transform: scale(1.18); }
+.a-swatch-active {
+  border-color: var(--text) !important;
+  transform: scale(1.18);
+  box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--text);
+}
+
 /* ── Image Resize Handle ──────────────────────────────────────── */
 .ql-img-handle {
   display: none;

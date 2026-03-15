@@ -60,6 +60,25 @@ function fmtDateTime(ts) {
   return new Date(ts).toLocaleString('en-US', { month: 'long', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
 }
 
+// ── Accent Color ──────────────────────────────────────────────
+function hexToRgb(hex) {
+  const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  return { r, g, b };
+}
+function rgbToHex(r, g, b) {
+  return '#' + [r,g,b].map(v => Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,'0')).join('');
+}
+function applyAccent(hex) {
+  if (!hex || !/^#[0-9a-fA-F]{6}$/.test(hex)) return;
+  const { r, g, b } = hexToRgb(hex);
+  const dark  = rgbToHex(r * 0.8, g * 0.8, b * 0.8);
+  const light = rgbToHex(r * 0.15 + 255 * 0.85, g * 0.15 + 255 * 0.85, b * 0.15 + 255 * 0.85);
+  const root  = document.documentElement;
+  root.style.setProperty('--accent',       hex);
+  root.style.setProperty('--accent-dark',  dark);
+  root.style.setProperty('--accent-light', light);
+}
+
 // ── Site Config ───────────────────────────────────────────────
 async function loadSiteConfig() {
   try {
@@ -79,6 +98,8 @@ async function loadSiteConfig() {
         ? words.slice(0, -1).join(' ') + ` <span>${words.at(-1)}</span>`
         : `<span>${App.siteConfig.title}</span>`;
     }
+    // Apply accent color
+    if (App.siteConfig.accentColor) applyAccent(App.siteConfig.accentColor);
   } catch (e) { console.error('Config load failed', e); }
 }
 
@@ -320,7 +341,17 @@ function renderPostView(post, comments, container) {
         ${isAdmin ? `<button class="btn btn-outline btn-sm" onclick="openEditPost('${post.id}')">✏️ Edit</button>` : ''}
       </div>
       <div class="post-page">
-        <img class="post-hero-img" src="${post.coverImage}" alt="${post.title}">
+        <div class="post-hero-wrap">
+          <img class="post-hero-img" src="${post.coverImage}" alt="${post.title}">
+          ${post.location && post.showMap ? `
+          <div class="post-map-embed">
+            <iframe
+              src="https://maps.google.com/maps?q=${encodeURIComponent(post.location)}&output=embed&z=13"
+              width="100%" height="100%" style="border:0;display:block"
+              allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade">
+            </iframe>
+          </div>` : ''}
+        </div>
         <div class="post-meta">
           ${section ? `<span class="post-meta-tag">${section.name}</span>` : ''}
           <span>${fmtDateTime(post.createdAt)}</span>
@@ -331,15 +362,7 @@ function renderPostView(post, comments, container) {
         <div class="post-location">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
           <span>${escHtml(post.location)}</span>
-        </div>
-        ${post.showMap ? `
-        <div class="post-map">
-          <iframe
-            src="https://maps.google.com/maps?q=${encodeURIComponent(post.location)}&output=embed&z=13"
-            width="100%" height="280" style="border:0;border-radius:var(--radius);display:block"
-            allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade">
-          </iframe>
-        </div>` : ''}` : ''}
+        </div>` : ''}
         <div class="post-content">${post.content}</div>
 
         <div class="comments">

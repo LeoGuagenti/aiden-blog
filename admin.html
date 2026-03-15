@@ -215,6 +215,31 @@
         <h3 class="a-settings-label">Donate Message</h3>
         <input class="form-input" id="site-donate-msg" type="text" placeholder="Feed my dog 🐕">
       </div>
+
+      <!-- Accent Color -->
+      <div class="a-settings-section" style="grid-column:1/-1">
+        <h3 class="a-settings-label">Accent Color</h3>
+        <p style="color:var(--text-faint);font-size:.8125rem;margin-bottom:12px">Used for buttons, links, tags, and highlights across the site.</p>
+        <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+          <div class="a-color-swatches" id="accent-swatches">
+            <button class="a-swatch" style="background:#C85A2B" data-color="#C85A2B" title="Terracotta" onclick="setAccentSwatch('#C85A2B')"></button>
+            <button class="a-swatch" style="background:#2563EB" data-color="#2563EB" title="Blue" onclick="setAccentSwatch('#2563EB')"></button>
+            <button class="a-swatch" style="background:#16A34A" data-color="#16A34A" title="Green" onclick="setAccentSwatch('#16A34A')"></button>
+            <button class="a-swatch" style="background:#9333EA" data-color="#9333EA" title="Purple" onclick="setAccentSwatch('#9333EA')"></button>
+            <button class="a-swatch" style="background:#DC2626" data-color="#DC2626" title="Red" onclick="setAccentSwatch('#DC2626')"></button>
+            <button class="a-swatch" style="background:#0891B2" data-color="#0891B2" title="Teal" onclick="setAccentSwatch('#0891B2')"></button>
+            <button class="a-swatch" style="background:#D97706" data-color="#D97706" title="Amber" onclick="setAccentSwatch('#D97706')"></button>
+            <button class="a-swatch" style="background:#DB2777" data-color="#DB2777" title="Pink" onclick="setAccentSwatch('#DB2777')"></button>
+            <button class="a-swatch" style="background:#334155" data-color="#334155" title="Slate" onclick="setAccentSwatch('#334155')"></button>
+          </div>
+          <label style="display:flex;align-items:center;gap:8px;font-size:.875rem;color:var(--text-muted);cursor:pointer">
+            <input type="color" id="site-accent-color" value="#C85A2B"
+              style="width:36px;height:36px;border:1.5px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;padding:2px;background:var(--surface)"
+              oninput="previewAccent(this.value)">
+            Custom
+          </label>
+        </div>
+      </div>
     </div>
 
     <div style="margin-top:24px">

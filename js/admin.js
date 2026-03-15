@@ -795,6 +795,39 @@ async function removeSubscriber(email, name) {
   } catch (e) { toast(e.message, 'error'); }
 }
 
+// ── Accent Color ──────────────────────────────────────────────
+function hexToRgb(hex) {
+  const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  return { r, g, b };
+}
+function rgbToHex(r, g, b) {
+  return '#' + [r,g,b].map(v => Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,'0')).join('');
+}
+function applyAccentAdmin(hex) {
+  if (!hex || !/^#[0-9a-fA-F]{6}$/.test(hex)) return;
+  const { r, g, b } = hexToRgb(hex);
+  const dark  = rgbToHex(r * 0.8, g * 0.8, b * 0.8);
+  const light = rgbToHex(r * 0.15 + 255 * 0.85, g * 0.15 + 255 * 0.85, b * 0.15 + 255 * 0.85);
+  const root = document.documentElement;
+  root.style.setProperty('--accent', hex);
+  root.style.setProperty('--accent-dark', dark);
+  root.style.setProperty('--accent-light', light);
+}
+function previewAccent(hex) {
+  applyAccentAdmin(hex);
+  updateSwatchSelection(hex);
+}
+function setAccentSwatch(hex) {
+  const picker = document.getElementById('site-accent-color');
+  if (picker) picker.value = hex;
+  previewAccent(hex);
+}
+function updateSwatchSelection(hex) {
+  document.querySelectorAll('.a-swatch').forEach(s => {
+    s.classList.toggle('a-swatch-active', s.dataset.color?.toLowerCase() === hex.toLowerCase());
+  });
+}
+
 // ── Site Config Tab ───────────────────────────────────────────
 async function renderSiteTab() {
   try {
@@ -812,6 +845,12 @@ async function renderSiteTab() {
       const clearBtn = document.getElementById('site-banner-clear-btn');
       if (clearBtn) clearBtn.classList.remove('hidden');
     }
+    // Accent color
+    const accent = config.accentColor || '#C85A2B';
+    const picker = document.getElementById('site-accent-color');
+    if (picker) picker.value = accent;
+    applyAccentAdmin(accent);
+    updateSwatchSelection(accent);
   } catch (e) { console.error(e); }
 }
 
@@ -824,6 +863,9 @@ async function saveSiteConfig() {
   });
   const bannerUrl = document.getElementById('site-banner-url')?.value;
   if (bannerUrl) data.bannerImage = bannerUrl;
+  // Accent color
+  const accent = document.getElementById('site-accent-color')?.value;
+  if (accent) data.accentColor = accent;
   try {
     await API.updateSiteConfig(data);
     toast('Site settings saved ✓', 'success');

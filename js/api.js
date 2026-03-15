@@ -89,6 +89,14 @@ const API = {
     return this.post('/api/viewer/change-password', { currentPassword, newPassword });
   },
 
+  async forgotPassword(email) {
+    return this.post('/api/viewer/forgot-password', { email });
+  },
+
+  async resetPassword(token, newPassword) {
+    return this.post('/api/viewer/reset-password', { token, newPassword });
+  },
+
   async requestAccess(email, firstName, lastName) {
     return this.post('/api/access/request', { email, firstName, lastName });
   },

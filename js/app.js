@@ -319,7 +319,7 @@ function renderFeed(container) {
       sectionWrap.appendChild(img);
     }
 
-    const MOBILE_LIMIT = 3;
+    const MOBILE_LIMIT = 2;
     const DESKTOP_LIMIT = 6;
     const grid = el('div', 'feed-grid');
     secPosts.forEach((p, i) => {
@@ -335,8 +335,7 @@ function renderFeed(container) {
     if (secPosts.length > MOBILE_LIMIT) {
       const moreWrap = el('div', 'section-see-more');
       // If all posts fit on desktop (≤ desktop limit), hide button on desktop only
-      if (secPosts.length <= DESKTOP_LIMIT) moreWrap.classList.add('desktop-hidden');
-      const secId = sec.id;
+      if (secPosts.length <= DESKTOP_LIMIT) moreWrap.classList.add('desktop-hidden');      const secId = sec.id;
       const secName = escHtml(sec.name);
       const count = secPosts.length;
       moreWrap.innerHTML = `<button class="btn btn-outline">See all ${count} posts in ${secName}</button>`;
@@ -649,9 +648,11 @@ function renderLoginModal() {
     <button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="doLogin()">
       ${isAdmin ? 'Sign In as Admin' : 'Sign In'}
     </button>
-    ${!isAdmin ? `<p style="text-align:center;margin-top:16px;font-size:.875rem;color:var(--text-muted)">
-      Don't have access? <a href="#" onclick="closeModal();openRequestModal()">Request it</a>
-    </p>` : ''}
+    ${!isAdmin ? `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;flex-wrap:wrap;gap:8px">
+      <p style="font-size:.875rem;color:var(--text-muted)">Don't have access? <a href="#" onclick="closeModal();openRequestModal()">Request it</a></p>
+      <a href="#" style="font-size:.875rem;color:var(--text-muted)" onclick="openForgotPasswordModal()">Forgot password?</a>
+    </div>` : ''}
   `);
   setTimeout(() => $('#login-identifier')?.focus(), 50);
   $('#login-identifier')?.addEventListener('keydown', e => { if (e.key === 'Enter') $('#login-pw')?.focus(); });
@@ -743,7 +744,88 @@ async function doRequestAccess() {
   } catch (e) { showErr(errEl, e.message); }
 }
 
-// ── Change Password Modal ─────────────────────────────────────
+// ── Forgot Password Modal ─────────────────────────────────────
+function openForgotPasswordModal() {
+  showModal(`
+    <div class="modal-title">Reset Password</div>
+    <p class="modal-sub">Enter your email and we'll send you a reset link. It expires in 15 minutes.</p>
+    <div class="form-group">
+      <label class="form-label">Email</label>
+      <input class="form-input" id="forgot-email" type="email" placeholder="your@email.com" autocomplete="email">
+    </div>
+    <div id="forgot-error" class="form-error hidden"></div>
+    <div id="forgot-success" class="form-success hidden"></div>
+    <button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="doForgotPassword()">Send Reset Link</button>
+    <p style="text-align:center;margin-top:14px;font-size:.875rem;color:var(--text-muted)">
+      <a href="#" onclick="closeModal();openLoginModal()">← Back to sign in</a>
+    </p>`);
+  setTimeout(() => $('#forgot-email')?.focus(), 50);
+  $('#forgot-email')?.addEventListener('keydown', e => { if (e.key === 'Enter') doForgotPassword(); });
+}
+
+async function doForgotPassword() {
+  const email = $('#forgot-email')?.value.trim();
+  const errEl = $('#forgot-error');
+  const sucEl = $('#forgot-success');
+  if (!email) { showErr(errEl, 'Please enter your email'); return; }
+  const btn = document.querySelector('#modal-backdrop .btn-primary');
+  if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
+  try {
+    await API.forgotPassword(email);
+    if (sucEl) { sucEl.textContent = 'If that email is registered, a reset link is on its way.'; sucEl.classList.remove('hidden'); }
+    if (errEl) errEl.classList.add('hidden');
+    if (btn) btn.classList.add('hidden');
+  } catch (e) {
+    if (btn) { btn.disabled = false; btn.textContent = 'Send Reset Link'; }
+    showErr(errEl, e.message);
+  }
+}
+
+// ── Reset Password Modal (opened from ?reset= URL param) ──────
+function openResetPasswordModal(token) {
+  showModal(`
+    <div class="modal-title">Set New Password</div>
+    <p class="modal-sub">Choose a new password for your account.</p>
+    <div class="form-group">
+      <label class="form-label">New Password</label>
+      ${pwField('reset-pw', 'At least 6 characters', 'new-password')}
+    </div>
+    <div class="form-group">
+      <label class="form-label">Confirm Password</label>
+      ${pwField('reset-pw2', 'Repeat password', 'new-password')}
+    </div>
+    <div id="reset-error" class="form-error hidden"></div>
+    <button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="doResetPassword('${token}')">Update Password</button>`, true);
+}
+
+async function doResetPassword(token) {
+  const pw = $('#reset-pw')?.value;
+  const pw2 = $('#reset-pw2')?.value;
+  const errEl = $('#reset-error');
+  if (!pw || !pw2) { showErr(errEl, 'Please fill in both fields'); return; }
+  if (pw !== pw2) { showErr(errEl, 'Passwords do not match'); return; }
+  if (pw.length < 6) { showErr(errEl, 'Password must be at least 6 characters'); return; }
+  const btn = document.querySelector('#modal-backdrop .btn-primary');
+  if (btn) { btn.disabled = true; btn.textContent = 'Updating…'; }
+  try {
+    const res = await API.resetPassword(token, pw);
+    // Clean the token from the URL, then auto-login
+    window.history.replaceState({}, '', window.location.pathname);
+    closeModal();
+    try {
+      await API.viewerLogin(res.email, pw);
+      renderHeader();
+      loadFeed();
+      toast('Password updated — you\'re signed in!', 'success');
+    } catch {
+      toast('Password updated! Please sign in.', 'success');
+      openLoginModal();
+    }
+  } catch (e) {
+    if (btn) { btn.disabled = false; btn.textContent = 'Update Password'; }
+    showErr(errEl, e.message);
+  }
+}
 function openChangePwModal(forced = true) {
   showModal(`
     <div class="modal-title">${forced ? 'Set Your Password' : 'Change Password'}</div>
@@ -871,10 +953,16 @@ async function init() {
   renderHeader();
   loadStats();
 
-  // Check if a post was linked directly
+  // Check for password reset token in URL
   const params = new URLSearchParams(window.location.search);
+  const resetToken = params.get('reset');
   const postId = params.get('post');
-  if (postId && API.isLoggedIn()) {
+
+  if (resetToken) {
+    // Show reset modal immediately — don't load feed behind it
+    loadFeed();
+    openResetPasswordModal(resetToken);
+  } else if (postId && API.isLoggedIn()) {
     loadFeed().then(() => openPost(postId));
   } else {
     loadFeed();

@@ -106,6 +106,8 @@ async function loadSiteConfig() {
     }
     // Apply accent color
     if (App.siteConfig.accentColor) applyAccent(App.siteConfig.accentColor);
+    // Re-render header now that displayName is available
+    if (API.isLoggedIn()) renderHeader();
   } catch (e) { console.error('Config load failed', e); }
 }
 
@@ -179,16 +181,27 @@ function renderHeader() {
     loginBtn?.classList.add('hidden');
     requestBtn?.classList.add('hidden');
     userMenuWrap?.classList.remove('hidden');
-    // Hide hero CTA buttons — user is already in
     $('#hero-actions')?.classList.add('hidden');
+
+    // Determine display name and initial
+    const displayName = isAdmin
+      ? (App.siteConfig?.adminDisplayName || user?.username || 'Admin')
+      : (user?.name || user?.email || '?');
+    const initial = displayName[0].toUpperCase();
+
+    // Update avatar button
     const avatar = $('#user-avatar');
-    if (avatar && user) {
-      avatar.textContent = (user.name || user.username || user.email || '?')[0].toUpperCase();
-    }
-    if (isAdmin) {
-      const adminLink = $('#admin-link');
-      if (adminLink) adminLink.classList.remove('hidden');
-    }
+    if (avatar) avatar.textContent = initial;
+
+    // Update dropdown header
+    const ddAvatar = $('#dropdown-avatar');
+    const ddName = $('#dropdown-name');
+    const ddRole = $('#dropdown-role');
+    if (ddAvatar) ddAvatar.textContent = initial;
+    if (ddName) ddName.textContent = displayName;
+    if (ddRole) ddRole.textContent = isAdmin ? 'Administrator' : 'Member';
+
+    if (isAdmin) $('#admin-link')?.classList.remove('hidden');
   } else {
     loginBtn?.classList.remove('hidden');
     requestBtn?.classList.remove('hidden');
@@ -290,28 +303,52 @@ function renderFeed(container) {
       .filter(Boolean);
     if (!secPosts.length) return;
 
-    // Section header
+    const sectionWrap = el('div', 'section-wrap');
+    sectionWrap.dataset.sectionId = sec.id;
+
     const hdr = el('div', 'section-header');
     hdr.innerHTML = `<h2 class="section-title">${sec.name}</h2><div class="section-rule"></div>`;
-    feed.appendChild(hdr);
+    sectionWrap.appendChild(hdr);
 
-    // Section banner
     if (sec.banner) {
       const img = el('img', 'section-banner');
       img.src = sec.banner; img.alt = sec.name;
-      feed.appendChild(img);
+      sectionWrap.appendChild(img);
     }
 
+    const LIMIT = 6;
     const grid = el('div', 'feed-grid');
     secPosts.forEach((p, i) => {
       const card = renderPostCard(p);
-      card.style.animationDelay = `${i * 0.05}s`;
+      card.style.animationDelay = `${Math.min(i, LIMIT - 1) * 0.05}s`;
+      if (i >= LIMIT) card.classList.add('sec-hidden-post');
       grid.appendChild(card);
     });
-    feed.appendChild(grid);
+    sectionWrap.appendChild(grid);
+
+    if (secPosts.length > LIMIT) {
+      const moreWrap = el('div', 'section-see-more');
+      const secId = sec.id;
+      const secName = escHtml(sec.name);
+      const count = secPosts.length;
+      moreWrap.innerHTML = `<button class="btn btn-outline">See all ${count} posts in ${secName}</button>`;
+      moreWrap.querySelector('button').addEventListener('click', function() { expandSection(this, secId); });
+      sectionWrap.appendChild(moreWrap);
+    }
+
+    feed.appendChild(sectionWrap);
   });
 
   container.appendChild(feed);
+}
+
+function expandSection(btn, sectionId) {
+  const wrap = document.querySelector(`.section-wrap[data-section-id="${sectionId}"]`);
+  if (!wrap) return;
+  wrap.querySelectorAll('.sec-hidden-post').forEach(c => c.classList.remove('sec-hidden-post'));
+  // Add class so mobile CSS nth-child rule stops hiding
+  wrap.querySelectorAll('.feed-grid').forEach(g => g.classList.add('sec-expanded'));
+  btn.closest('.section-see-more')?.remove();
 }
 
 function renderPostCard(post) {

@@ -327,6 +327,19 @@ function renderPostView(post, comments, container) {
           ${post.views ? `<span style="color:var(--text-faint)">${post.views.toLocaleString()} views</span>` : ''}
         </div>
         <h1 class="post-title">${post.title}</h1>
+        ${post.location ? `
+        <div class="post-location">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          <span>${escHtml(post.location)}</span>
+        </div>
+        ${post.showMap ? `
+        <div class="post-map">
+          <iframe
+            src="https://maps.google.com/maps?q=${encodeURIComponent(post.location)}&output=embed&z=13"
+            width="100%" height="280" style="border:0;border-radius:var(--radius);display:block"
+            allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade">
+          </iframe>
+        </div>` : ''}` : ''}
         <div class="post-content">${post.content}</div>
 
         <div class="comments">
@@ -384,6 +397,33 @@ function escHtml(s) {
   return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+// ── Password Field with Eye Toggle ───────────────────────────
+function pwField(id, placeholder, autocomplete = 'current-password') {
+  return `
+    <div class="pw-wrap">
+      <input class="form-input" id="${id}" type="password"
+        placeholder="${placeholder}" autocomplete="${autocomplete}">
+      <button type="button" class="pw-eye" onclick="togglePw('${id}')" tabindex="-1" aria-label="Show password">
+        <svg id="${id}-eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+        </svg>
+      </button>
+    </div>`;
+}
+
+function togglePw(id) {
+  const input = document.getElementById(id);
+  const icon  = document.getElementById(id + '-eye-icon');
+  if (!input) return;
+  const showing = input.type === 'text';
+  input.type = showing ? 'password' : 'text';
+  // Swap to slashed eye when visible
+  icon.innerHTML = showing
+    ? `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`
+    : `<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+      <line x1="1" y1="1" x2="23" y2="23"/>`;
+}
+
 // ── Login Modal ───────────────────────────────────────────────
 let loginMode = 'viewer'; // 'viewer' | 'admin'
 
@@ -414,7 +454,7 @@ function renderLoginModal() {
     </div>
     <div class="form-group">
       <label class="form-label">Password</label>
-      <input class="form-input" id="login-pw" type="password" placeholder="••••••••" autocomplete="current-password">
+      ${pwField('login-pw', '••••••••', 'current-password')}
     </div>
     <div id="login-error" class="form-error hidden"></div>
     <button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="doLogin()">
@@ -522,15 +562,15 @@ function openChangePwModal(forced = true) {
     ${forced ? '' : `
     <div class="form-group">
       <label class="form-label">Current Password</label>
-      <input class="form-input" id="cur-pw" type="password" placeholder="••••••••">
+      ${pwField('cur-pw', '••••••••', 'current-password')}
     </div>`}
     <div class="form-group">
       <label class="form-label">New Password</label>
-      <input class="form-input" id="new-pw" type="password" placeholder="At least 6 characters">
+      ${pwField('new-pw', 'At least 6 characters', 'new-password')}
     </div>
     <div class="form-group">
       <label class="form-label">Confirm Password</label>
-      <input class="form-input" id="conf-pw" type="password" placeholder="Repeat password">
+      ${pwField('conf-pw', 'Repeat password', 'new-password')}
     </div>
     <div id="cpw-error" class="form-error hidden"></div>
     <button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="doChangePw(${forced})">Update Password</button>`, forced);

@@ -276,7 +276,7 @@ function initEditor(content) {
           [{ header: [1, 2, 3, false] }],
           ['bold', 'italic', 'underline', 'strike'],
           [{ list: 'ordered' }, { list: 'bullet' }],
-          ['blockquote', 'link', 'image'],
+          ['blockquote', 'link', 'image', 'video'],
           [{ align: [] }],
           ['clean'],
         ],
@@ -300,6 +300,15 @@ function initEditor(content) {
                 toast('Image upload failed: ' + e.message, 'error');
               }
             };
+          },
+          video: () => {
+            const url = prompt('Paste a YouTube, Vimeo, or Loom URL:');
+            if (!url) return;
+            const embedUrl = toEmbedUrl(url);
+            if (!embedUrl) { toast('Unsupported video URL. Try YouTube, Vimeo, or Loom.', 'error'); return; }
+            const range = Admin.editor.getSelection(true);
+            Admin.editor.insertEmbed(range ? range.index : 0, 'video', embedUrl);
+            if (range) Admin.editor.setSelection(range.index + 1);
           }
         }
       }
@@ -309,6 +318,31 @@ function initEditor(content) {
 
   // ── Image resize handler ──────────────────────────────────────
   initImageResize(Admin.editor);
+}
+
+// Convert share URLs to embed URLs for YouTube, Vimeo, Loom
+function toEmbedUrl(url) {
+  try {
+    const u = new URL(url);
+    // YouTube
+    const ytId = u.searchParams.get('v') || u.pathname.split('/').pop();
+    if (u.hostname.includes('youtube.com') || u.hostname.includes('youtu.be')) {
+      return `https://www.youtube.com/embed/${ytId}`;
+    }
+    // Vimeo
+    if (u.hostname.includes('vimeo.com')) {
+      const id = u.pathname.replace(/\D/g,'');
+      return `https://player.vimeo.com/video/${id}`;
+    }
+    // Loom
+    if (u.hostname.includes('loom.com')) {
+      const id = u.pathname.split('/').pop();
+      return `https://www.loom.com/embed/${id}`;
+    }
+    // Already an embed or iframe src — pass through
+    if (url.includes('/embed/') || url.includes('player.')) return url;
+    return null;
+  } catch { return null; }
 }
 
 function initImageResize(quill) {

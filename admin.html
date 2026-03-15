@@ -222,15 +222,12 @@
         <p style="color:var(--text-faint);font-size:.8125rem;margin-bottom:12px">Used for buttons, links, tags, and highlights across the site.</p>
         <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
           <div class="a-color-swatches" id="accent-swatches">
-            <button class="a-swatch" style="background:#C85A2B" data-color="#C85A2B" title="Terracotta" onclick="setAccentSwatch('#C85A2B')"></button>
-            <button class="a-swatch" style="background:#2563EB" data-color="#2563EB" title="Blue" onclick="setAccentSwatch('#2563EB')"></button>
-            <button class="a-swatch" style="background:#16A34A" data-color="#16A34A" title="Green" onclick="setAccentSwatch('#16A34A')"></button>
-            <button class="a-swatch" style="background:#9333EA" data-color="#9333EA" title="Purple" onclick="setAccentSwatch('#9333EA')"></button>
-            <button class="a-swatch" style="background:#DC2626" data-color="#DC2626" title="Red" onclick="setAccentSwatch('#DC2626')"></button>
-            <button class="a-swatch" style="background:#0891B2" data-color="#0891B2" title="Teal" onclick="setAccentSwatch('#0891B2')"></button>
-            <button class="a-swatch" style="background:#D97706" data-color="#D97706" title="Amber" onclick="setAccentSwatch('#D97706')"></button>
-            <button class="a-swatch" style="background:#DB2777" data-color="#DB2777" title="Pink" onclick="setAccentSwatch('#DB2777')"></button>
-            <button class="a-swatch" style="background:#334155" data-color="#334155" title="Slate" onclick="setAccentSwatch('#334155')"></button>
+            <button class="a-swatch" style="background:#C17F5E" data-color="#C17F5E" title="Clay" onclick="setAccentSwatch('#C17F5E')"></button>
+            <button class="a-swatch" style="background:#7BA7BC" data-color="#7BA7BC" title="Sky" onclick="setAccentSwatch('#7BA7BC')"></button>
+            <button class="a-swatch" style="background:#8FAF8F" data-color="#8FAF8F" title="Sage" onclick="setAccentSwatch('#8FAF8F')"></button>
+            <button class="a-swatch" style="background:#B89AC8" data-color="#B89AC8" title="Lavender" onclick="setAccentSwatch('#B89AC8')"></button>
+            <button class="a-swatch" style="background:#C4A882" data-color="#C4A882" title="Sand" onclick="setAccentSwatch('#C4A882')"></button>
+            <button class="a-swatch" style="background:#BC8A8A" data-color="#BC8A8A" title="Rose" onclick="setAccentSwatch('#BC8A8A')"></button>
           </div>
           <label style="display:flex;align-items:center;gap:8px;font-size:.875rem;color:var(--text-muted);cursor:pointer">
             <input type="color" id="site-accent-color" value="#C85A2B"
@@ -280,6 +277,10 @@
             <div style="font-size:1.5rem;margin-bottom:4px">📷</div>
             <div style="font-size:.875rem">Click to upload</div>
             <div style="font-size:.75rem;color:var(--text-faint);margin-top:2px">Required for every post</div>
+          </div>
+          <div class="a-img-upload-hover">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <span>Replace</span>
           </div>
         </div>
         <input type="file" id="cover-file-input" accept="image/*" class="hidden">

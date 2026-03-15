@@ -181,6 +181,22 @@ function renderHeader() {
 }
 
 // ── Feed ──────────────────────────────────────────────────────
+function renderFeedSkeleton() {
+  const feedEl = $('#feed-container');
+  if (!feedEl) return;
+  const cards = Array.from({length: 6}, () => `
+    <div class="feed-skeleton-card">
+      <div class="feed-skeleton-img skeleton"></div>
+      <div class="feed-skeleton-body">
+        <div class="feed-skeleton-line skeleton" style="width:35%"></div>
+        <div class="feed-skeleton-line skeleton" style="width:75%;height:18px"></div>
+        <div class="feed-skeleton-line skeleton" style="width:90%"></div>
+        <div class="feed-skeleton-line skeleton" style="width:60%"></div>
+      </div>
+    </div>`).join('');
+  feedEl.innerHTML = `<div class="feed-skeleton"><div class="feed-skeleton-grid">${cards}</div></div>`;
+}
+
 async function loadFeed() {
   const feedEl = $('#feed-container');
   if (!feedEl) return;
@@ -189,6 +205,8 @@ async function loadFeed() {
     renderGate();
     return;
   }
+
+  renderFeedSkeleton();
 
   try {
     const [posts, sections] = await Promise.all([API.getPosts(), API.getSections()]);
@@ -303,13 +321,29 @@ function renderPostCard(post) {
 }
 
 // ── Post View ─────────────────────────────────────────────────
+function renderPostSkeleton(overlay) {
+  overlay.innerHTML = `
+    <div style="background:var(--bg);min-height:100vh">
+      <div class="post-overlay-bar">
+        <button class="btn btn-ghost" onclick="closePost()">← Back</button>
+      </div>
+      <div class="post-skeleton">
+        <div class="post-skeleton-hero skeleton"></div>
+        <div class="post-skeleton-meta skeleton"></div>
+        <div class="post-skeleton-title skeleton"></div>
+        <div class="post-skeleton-title2 skeleton"></div>
+        ${Array.from({length:8},(_,i)=>`<div class="post-skeleton-p skeleton" style="width:${[95,88,72,90,65,93,80,55][i]}%"></div>`).join('')}
+      </div>
+    </div>`;
+}
+
 async function openPost(id) {
   const overlay = $('#post-overlay');
   if (!overlay) return;
   overlay.classList.remove('hidden');
-  overlay.innerHTML = `<div style="padding:60px 24px;text-align:center;color:var(--text-muted)">Loading...</div>`;
   document.body.style.overflow = 'hidden';
   window.history.pushState({}, '', `?post=${id}`);
+  renderPostSkeleton(overlay);
 
   try {
     const [post, comments] = await Promise.all([API.getPost(id), API.getComments(id)]);
@@ -333,6 +367,11 @@ function closePost() {
 function renderPostView(post, comments, container) {
   const section = App.sections.find(s => s.id === post.sectionId);
   const isAdmin = API.isAdmin();
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const mapStyle = isDark ? '&style=element:geometry%7Ccolor:0x212121&style=element:labels.icon%7Cvisibility:off&style=element:labels.text.fill%7Ccolor:0x757575&style=element:labels.text.stroke%7Ccolor:0x212121&style=feature:administrative%7Celement:geometry%7Ccolor:0x757575&style=feature:road%7Celement:geometry%7Ccolor:0x484848&style=feature:water%7Celement:geometry%7Ccolor:0x000000' : '';
+
+  // Process content — wrap video embeds in responsive container
+  const processedContent = processVideoEmbeds(post.content || '');
 
   container.innerHTML = `
     <div style="background:var(--bg);min-height:100vh">
@@ -344,12 +383,16 @@ function renderPostView(post, comments, container) {
         <div class="post-hero-wrap">
           <img class="post-hero-img" src="${post.coverImage}" alt="${post.title}">
           ${post.location && post.showMap ? `
-          <div class="post-map-embed">
-            <iframe
-              src="https://maps.google.com/maps?q=${encodeURIComponent(post.location)}&output=embed&z=13"
-              width="100%" height="100%" style="border:0;display:block"
-              allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade">
-            </iframe>
+          <div class="map-skeleton-wrap">
+            <div class="map-skeleton skeleton" id="map-skeleton"></div>
+            <div class="post-map-embed" id="post-map-embed" style="opacity:0;transition:opacity .4s ease">
+              <iframe
+                src="https://maps.google.com/maps?q=${encodeURIComponent(post.location)}&output=embed&z=13${mapStyle}"
+                width="100%" height="100%" style="border:0;display:block"
+                allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"
+                onload="document.getElementById('map-skeleton')?.remove();this.closest('.post-map-embed').style.opacity='1'">
+              </iframe>
+            </div>
           </div>` : ''}
         </div>
         <div class="post-meta">
@@ -363,7 +406,7 @@ function renderPostView(post, comments, container) {
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
           <span>${escHtml(post.location)}</span>
         </div>` : ''}
-        <div class="post-content">${post.content}</div>
+        <div class="post-content">${processedContent}</div>
 
         <div class="comments">
           <h3 class="comments-title">Comments</h3>
@@ -377,6 +420,15 @@ function renderPostView(post, comments, container) {
         </div>
       </div>
     </div>`;
+}
+
+// ── Video Embed Processing ─────────────────────────────────────
+function processVideoEmbeds(content) {
+  // Wrap any bare iframes (YouTube/Vimeo embeds) in responsive container
+  return content.replace(
+    /(<iframe[^>]*(?:youtube|youtu\.be|vimeo|loom)[^>]*>[\s\S]*?<\/iframe>)/gi,
+    '<div class="video-embed-wrap">$1</div>'
+  );
 }
 
 function renderCommentsList(comments) {
